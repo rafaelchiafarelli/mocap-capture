@@ -23,3 +23,4 @@ Rules specific to this repository:
 | Initiative | Status |
 |---|---|
 | [baseline](baseline/baseline.md) | Planned — not started |
+| [future](future/README.md) | Parked ideas (LED flash sync) — not planned |

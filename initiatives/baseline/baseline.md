@@ -4,7 +4,7 @@
 
 **Scope:** Linux; webcam via FFmpeg without re-encoding; Android tablets via `adb pull`; sync markers are software events on the host clock (no sync hardware). Camera sources sit behind an interface, so hardware can be swapped later without touching the rest.
 
-**Out of scope:** LED flash / any sync hardware (parked — `initiatives/future/README.md`); live director monitor (own initiative: `initiatives/live-monitor/`); ZMQ/Harpia control plane, tablet dashboard, remote recording trigger on the tablets (phase 2).
+**Out of scope:** LED flash / any sync hardware (parked — `initiatives/future/README.md`); full studio setup and guided calibration (own initiative: `initiatives/studio-setup/`); live director monitor (own initiative: `initiatives/live-monitor/`); ZMQ/Harpia control plane, tablet dashboard, remote recording trigger on the tablets (phase 2).
 
 **Initiative gate:** A take with 1 webcam + ≥2 tablets produces valid `take.json` and `report.json` (contracts v0.1.0), with START/END sync markers inside every camera's timestamp range.
 

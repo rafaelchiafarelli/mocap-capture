@@ -1,12 +1,12 @@
 # baseline — mocap-capture
 
-**Goal:** P1 + P2: detect and configure cameras, record takes from USB (UVC) cameras and import takes from devices that record internally (tablets/standalone cameras), with all cameras on one host clock (per-frame timestamps + START/END sync markers) and a verification report.
+**Goal:** P1 + P2 on the **recorder PC**: detect and configure cameras, record takes from USB (UVC) cameras and from devices that stream live to the recorder (STREAM: tablets/phones running the camera app), with every camera on one host clock (per-frame timestamps + START/END sync markers). Then verify the take, preprocess it (crop/rescale, CPU only) and hand it off to the processing PC.
 
-**Scope:** Linux; webcam via FFmpeg without re-encoding; Android tablets via `adb pull`; sync markers are software events on the host clock (no sync hardware). Camera sources sit behind an interface, so hardware can be swapped later without touching the rest.
+**Scope:** Linux; webcam via FFmpeg without re-encoding; STREAM devices' H.264 written without re-encoding, each frame's embedded capture time mapped onto the host clock; sync markers are software events on the host clock (no sync hardware); preprocessing limited to simple, CPU-only operations; hand-off by copying the take folder (rsync) with a manifest. Camera sources sit behind an interface, so hardware can be swapped later without touching the rest.
 
-**Out of scope:** LED flash / any sync hardware (parked — `initiatives/future/README.md`); full studio setup and guided calibration (own initiative: `initiatives/studio-setup/`); live director monitor (own initiative: `initiatives/live-monitor/`); ZMQ/Harpia control plane, tablet dashboard, remote recording trigger on the tablets (phase 2).
+**Out of scope:** LED flash / any sync hardware (parked — `initiatives/future/README.md`); full studio setup and guided calibration (own initiative: `initiatives/studio-setup/`); live director monitor (own initiative: `initiatives/live-monitor/`); building the camera app itself (see `mocap-studio/HANDOFF.md`); devices that record internally (no `adb` import); anything that needs a neural net (processing PC); ZMQ/Harpia control plane and live streaming to the processing PC (phase 2).
 
-**Initiative gate:** A take with 1 webcam + ≥2 tablets produces valid `take.json` and `report.json` (contracts v0.1.0), with START/END sync markers inside every camera's timestamp range.
+**Initiative gate:** A take with 1 webcam + ≥2 streaming tablets produces valid `take.json`, `report.json` and `manifest.json` (contracts v0.1.0), with START/END sync markers inside every camera's timestamp range, and arrives intact on the processing PC.
 
 General context, cross-repository order and open questions:
 `mocap-studio/HANDOFF.md`.

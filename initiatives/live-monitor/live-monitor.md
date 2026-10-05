@@ -20,11 +20,8 @@ open.
 
 **Blocked on:**
 - The decisions listed under "Open decisions" below.
-- A **streaming camera source** (cameras delivering frames live to the recorder,
-  as in `mocap-studio/camera-stream-eval`). It isn't planned yet; it comes from
-  the architecture re-plan in `mocap-studio/HANDOFF.md`. Tablets that record
-  internally and get imported via `adb` (baseline devices/5) give nothing to
-  preview.
+- The **STREAM camera source** (`baseline` devices/5), which is now planned, and the
+  production camera app it needs (see `mocap-studio/HANDOFF.md`).
 
 ## Open decisions (Rafael, before any task starts)
 

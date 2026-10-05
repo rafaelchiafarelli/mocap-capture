@@ -23,4 +23,5 @@ Rules specific to this repository:
 | Initiative | Status |
 |---|---|
 | [baseline](baseline/baseline.md) | Planned — not started |
+| [live-monitor](live-monitor/live-monitor.md) | Planned — blocked on decisions + streaming source |
 | [future](future/README.md) | Parked ideas (LED flash sync) — not planned |

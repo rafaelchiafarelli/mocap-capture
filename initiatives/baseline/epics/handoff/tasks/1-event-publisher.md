@@ -7,4 +7,4 @@
   - Delivers: `publish(event)`, which writes the event as its JSON sidecar (`closed.json` / `<file>.ready.json`, via `layout`) **and** sends it. The sidecar is written first and goes with the files, so the session folder stays the record even if a message is lost.
 - **Pre-work:** none
 - **Out of scope:** copying files (task 2); deciding when to publish (task 3)
-- **Tests:** sidecar content == sent message; with the receiver down, the event still reaches it once it starts (critical delivery)
+- **Tests:** sidecar content == sent message; an event sent while the receiver is down reaches it once it binds (ZeroMQ PUSH queues it); after a publisher restart, the lost event is still recoverable from its sidecar

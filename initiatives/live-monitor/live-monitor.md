@@ -21,7 +21,7 @@ open.
 **Blocked on:**
 - The decisions listed under "Open decisions" below.
 - The **STREAM camera source** (`baseline` devices/5), which is now planned, and the
-  production camera app it needs (see `mocap-studio/HANDOFF.md`).
+  production camera app (`mocap-camera-app`) it reads from.
 
 ## Open decisions (Rafael, before any task starts)
 

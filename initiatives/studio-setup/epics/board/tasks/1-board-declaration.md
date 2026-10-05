@@ -1,6 +1,6 @@
 ## 1. Board declaration
 
-- **Depends on:** mocap-contracts `CalibrationBoard` (messages-v0/1); baseline bootstrap/1 (`load_config`)
+- **Depends on:** mocap-contracts `CalibrationBoard` (messages-v0/2); baseline bootstrap/1 (`load_config`)
 - **Contract:**
   - In: `config.yaml`
   - Requires: a `board:` section filled into `CalibrationBoard` (squares_x, squares_y, square_length_mm, marker_length_mm, aruco_dictionary, measured_square_length_mm); validation rejects a missing or partial board; **no code anywhere has default board values**

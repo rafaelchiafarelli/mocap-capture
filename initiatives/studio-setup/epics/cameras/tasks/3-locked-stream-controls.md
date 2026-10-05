@@ -1,6 +1,6 @@
 ## 3. Locked streaming-camera controls
 
-- **Depends on:** **the streaming camera source** (not planned yet — architecture re-plan)
+- **Depends on:** the STREAM camera source (`baseline` devices/5)
 - **Contract:**
   - In: same `controls:` section as task 2
   - Requires: the camera app accepts locked exposure/ISO/focus/white balance over its control API (Camera2 manual controls on the tablets) and reports what it actually applied; devices without manual control are flagged, not silently accepted

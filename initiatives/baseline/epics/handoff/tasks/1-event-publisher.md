@@ -1,6 +1,6 @@
 ## 1. Hand-off event publisher
 
-- **Depends on:** bootstrap; mocap-contracts v0.1.0 (messages-v0/2, /6)
+- **Depends on:** bootstrap; mocap-contracts v0.1.0 (messages-v0/3, /7)
 - **Contract:**
   - In: a `TakeClosed` or `CameraFileReady` message; `config.yaml` `handoff:` (processing PC event endpoint). Declared, never discovered.
   - Requires: the generated ZeroMQ sender from `mocap_contracts`

@@ -50,8 +50,9 @@ make test   # full suite
 
 ## config.yaml
 
-So far it has a single section, `cameras`: a list of `CameraConfig` entries
-from `mocap-contracts`. They're checked just like a contract file: only
+Two sections so far. `storage.root` is the data root the session folders
+live under (`<root>/<session>/takes/<take>/`), an absolute path. `cameras` is
+a list of `CameraConfig` entries from `mocap-contracts`. They're checked just like a contract file: only
 declared fields, all required fields present, and the per-message rules (UVC
 needs `device_hint`, STREAM needs a host and ports). Roles must be unique.
 Any other top-level key is an error. Later sections (`handoff`, `board`, ...)
@@ -60,8 +61,8 @@ are added by the tasks that need them. Example:
 
 ## Status
 
-Baseline in progress: bootstrap done (package, `mocap-capture --version`,
-`load_config`).
+Baseline in progress: bootstrap, devices (`CameraSource` registry, STREAM
+source) and recording (`ManualTrigger`, `mocap-capture take`) done.
 Initiatives:
 - [`baseline`](initiatives/baseline/baseline.md): cameras, recording, sync,
   report, preprocessing, hand-off

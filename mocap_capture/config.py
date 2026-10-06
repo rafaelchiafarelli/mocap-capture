@@ -1,6 +1,8 @@
-"""`config.yaml`: the recorder's declaration of its cameras.
+"""`config.yaml`: the recorder's declaration of its storage and cameras.
 
-Only `cameras` exists so far. Each entry is a `CameraConfig` from
+`storage.root` is the data root the session folders live under
+(`mocap_contracts.layout`): an absolute path, required, never guessed.
+Each `cameras` entry is a `CameraConfig` from
 mocap-contracts and is checked exactly like a contract file: declared
 fields only, `required` enforced, plus the per-message rules. Every other
 section (`handoff`, `board`, ...) is added by the task that needs it, so
@@ -12,11 +14,13 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from os import PathLike
+from pathlib import Path
 
 import yaml
 from mocap_contracts import CameraConfig, ContractError, from_json
 
-SECTIONS = ("cameras",)
+SECTIONS = ("storage", "cameras")
+STORAGE_KEYS = ("root",)
 
 
 class ConfigError(ValueError):
@@ -25,6 +29,7 @@ class ConfigError(ValueError):
 
 @dataclass(frozen=True)
 class Config:
+    storage_root: Path
     cameras: tuple[CameraConfig, ...]
 
 
@@ -42,6 +47,7 @@ def load_config(path: str | PathLike[str]) -> Config:
     unknown = sorted(set(data) - set(SECTIONS))
     if unknown:
         raise ConfigError(f"{path}: unknown section(s) {unknown}")
+    storage_root = _storage(path, data.get("storage"))
     entries = data.get("cameras")
     if not isinstance(entries, list) or not entries:
         raise ConfigError(f"{path}: cameras must be a non-empty list")
@@ -51,7 +57,19 @@ def load_config(path: str | PathLike[str]) -> Config:
     duplicates = sorted({r for r in roles if roles.count(r) > 1})
     if duplicates:
         raise ConfigError(f"{path}: duplicate role(s) {duplicates}")
-    return Config(cameras=cameras)
+    return Config(storage_root=storage_root, cameras=cameras)
+
+
+def _storage(path: str | PathLike[str], storage: object) -> Path:
+    if not isinstance(storage, dict):
+        raise ConfigError(f"{path}: storage must be a mapping with root")
+    unknown = sorted(set(storage) - set(STORAGE_KEYS))
+    if unknown:
+        raise ConfigError(f"{path}: storage: unknown key(s) {unknown}")
+    root = storage.get("root")
+    if not isinstance(root, str) or not Path(root).is_absolute():
+        raise ConfigError(f"{path}: storage.root must be an absolute path, got {root!r}")
+    return Path(root)
 
 
 def _camera(path: str | PathLike[str], i: int, entry: object) -> CameraConfig:

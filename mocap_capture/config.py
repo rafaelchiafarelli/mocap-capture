@@ -2,6 +2,10 @@
 
 `storage.root` is the data root the session folders live under
 (`mocap_contracts.layout`): an absolute path, required, never guessed.
+`report.max_gap_ms` is the longest frame gap a take may have and still be
+ok (shorter gaps are listed in the report, not failed). `take.post_roll_ms`
+is how long every source keeps recording after END, so the last frames
+captured before END have arrived when it stops.
 Each `cameras` entry is a `CameraConfig` from
 mocap-contracts and is checked exactly like a contract file: declared
 fields only, `required` enforced, plus the per-message rules. Every other
@@ -19,7 +23,7 @@ from pathlib import Path
 import yaml
 from mocap_contracts import CameraConfig, ContractError, from_json
 
-SECTIONS = ("storage", "cameras")
+SECTIONS = ("storage", "take", "report", "cameras")
 STORAGE_KEYS = ("root",)
 
 
@@ -30,6 +34,8 @@ class ConfigError(ValueError):
 @dataclass(frozen=True)
 class Config:
     storage_root: Path
+    post_roll_ms: float
+    max_gap_ms: float
     cameras: tuple[CameraConfig, ...]
 
 
@@ -48,6 +54,8 @@ def load_config(path: str | PathLike[str]) -> Config:
     if unknown:
         raise ConfigError(f"{path}: unknown section(s) {unknown}")
     storage_root = _storage(path, data.get("storage"))
+    post_roll_ms = _number(path, data.get("take"), "take", "post_roll_ms", allow_zero=True)
+    max_gap_ms = _number(path, data.get("report"), "report", "max_gap_ms")
     entries = data.get("cameras")
     if not isinstance(entries, list) or not entries:
         raise ConfigError(f"{path}: cameras must be a non-empty list")
@@ -57,7 +65,26 @@ def load_config(path: str | PathLike[str]) -> Config:
     duplicates = sorted({r for r in roles if roles.count(r) > 1})
     if duplicates:
         raise ConfigError(f"{path}: duplicate role(s) {duplicates}")
-    return Config(storage_root=storage_root, cameras=cameras)
+    return Config(
+        storage_root=storage_root, post_roll_ms=post_roll_ms, max_gap_ms=max_gap_ms, cameras=cameras
+    )
+
+
+def _number(
+    path: str | PathLike[str], section: object, name: str, key: str, allow_zero: bool = False
+) -> float:
+    """A section holding exactly one required number, `key`."""
+    if not isinstance(section, dict):
+        raise ConfigError(f"{path}: {name} must be a mapping with {key}")
+    unknown = sorted(set(section) - {key})
+    if unknown:
+        raise ConfigError(f"{path}: {name}: unknown key(s) {unknown}")
+    value = section.get(key)
+    bad = isinstance(value, bool) or not isinstance(value, (int, float))
+    if bad or value < 0 or (value == 0 and not allow_zero):
+        what = "a non-negative" if allow_zero else "a positive"
+        raise ConfigError(f"{path}: {name}.{key} must be {what} number, got {value!r}")
+    return float(value)
 
 
 def _storage(path: str | PathLike[str], storage: object) -> Path:

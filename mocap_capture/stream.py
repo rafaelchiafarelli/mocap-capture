@@ -214,6 +214,9 @@ class Muxer(Protocol):
     def close(self) -> None: ...
 
 
+ERROR_LINES = 5  # of FFmpeg's stderr kept in an error, its last ones
+
+
 class FfmpegMuxer:
     """Raw H.264 on stdin → MKV, stream copied, never re-encoded.
 
@@ -238,10 +241,11 @@ class FfmpegMuxer:
         self._proc.stdin.close()
         code = self._proc.wait()
         self._err.seek(0)
-        err = self._err.read().decode(errors="replace").strip()
+        lines = self._err.read().decode(errors="replace").strip().splitlines()
         self._err.close()
         if code != 0:
-            raise StreamSourceError(f"ffmpeg writing {self._out} exited {code}: {err}")
+            tail = "\n".join(lines[-ERROR_LINES:])
+            raise StreamSourceError(f"ffmpeg writing {self._out} exited {code}:\n{tail}")
 
 
 # ---------------------------------------------------------------- the source

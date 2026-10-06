@@ -44,7 +44,7 @@ mocap-capture send --session S --take T              # resend anything missing
 ## Development
 
 ```bash
-make venv   # .venv with Python 3.12, mocap-contracts v0.2.1, the test extras
+make venv   # contracts submodule (stream v1 fixtures), .venv with Python 3.12, mocap-contracts v0.2.1, test extras
 make test   # full suite
 ```
 

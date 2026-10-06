@@ -1,9 +1,9 @@
 ## 3. Take lifecycle (CLI)
 
-- **Depends on:** 2; devices/5
+- **Depends on:** devices/1, devices/5
 - **Contract:**
   - In: session, take name, type
-  - Requires: creates `take_dir` via `layout`; checks that every configured source (UVC and STREAM) is ready before START; writes `take.json`
+  - Requires: creates `take_dir` via `layout`; builds every configured source through the `CameraSource` registry and checks it is ready (`prepare()`) before START; a configured kind with no registered source (e.g. UVC) is an error; writes `take.json`
   - Delivers: `mocap-capture take --session S --name N --type PERFORMANCE|CALIBRATION`
 - **Pre-work:** none
 - **Out of scope:** preprocessing and hand-off (epics `preprocess`, `handoff`)

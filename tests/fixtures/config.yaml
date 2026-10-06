@@ -1,4 +1,7 @@
-# One webcam and one streaming tablet, as the recorder declares them.
+# A UVC camera (valid config, but webcams are parked: no source is registered
+# for it) and a streaming tablet.
+storage:
+  root: /data/mocap
 cameras:
   - role: body_1
     source: CAMERA_SOURCE_UVC

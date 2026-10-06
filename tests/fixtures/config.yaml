@@ -2,6 +2,10 @@
 # for it) and a streaming tablet.
 storage:
   root: /data/mocap
+take:
+  post_roll_ms: 500
+report:
+  max_gap_ms: 100
 cameras:
   - role: body_1
     source: CAMERA_SOURCE_UVC

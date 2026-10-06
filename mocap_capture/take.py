@@ -5,7 +5,9 @@
     2. create takes/<take>/ under storage.root, start every source,
        then mark START and write take.json (no end yet)
     3. record until the operator ends the take (Enter, or Ctrl+C)
-    4. mark END, stop every source, collect their files, rewrite take.json
+    4. mark END, keep recording for take.post_roll_ms (Ctrl+C cuts it short),
+       then stop every source, collect their files, rewrite take.json
+    5. write report.json (the take report) and print its summary
 
 A source that fails to stop or collect doesn't keep the others from
 stopping; the take is still closed and the failures are raised together.
@@ -14,6 +16,7 @@ stopping; the take is still closed and the failures are raised together.
 from __future__ import annotations
 
 import os
+import time
 from collections.abc import Callable
 from pathlib import Path
 
@@ -21,6 +24,7 @@ from mocap_contracts import ContractError, Take, TakeCamera, TakeType, layout, t
 
 import mocap_capture.stream  # noqa: F401  (registers the STREAM source)
 from mocap_capture.config import Config
+from mocap_capture.report import ReportError, summary, write_report
 from mocap_capture.sources import CameraSource, create_source
 from mocap_capture.sync import END, START, ManualTrigger
 
@@ -41,6 +45,7 @@ def run_take(
     trigger: ManualTrigger | None = None,
     make_source: Callable = create_source,
     report: Callable[[str], None] = print,
+    sleep: Callable[[float], None] = time.sleep,
 ) -> Path:
     """Run one take and return its folder. `wait_for_end` returns when the operator ends it."""
     trigger = trigger or ManualTrigger()
@@ -88,6 +93,12 @@ def run_take(
         pass
     take.end.CopyFrom(trigger.mark(END))
     report(f"END {take.end.host_ts_ns}")
+    if config.post_roll_ms > 0:
+        report(f"post-roll: {config.post_roll_ms:g} ms")
+        try:
+            sleep(config.post_roll_ms / 1000)
+        except KeyboardInterrupt:
+            report("post-roll cut short")
 
     errors = _stop(sources, report)
     for source in sources:
@@ -101,6 +112,10 @@ def run_take(
             report(f"{source.config.role}: {problem}")
     _write(take_dir, take)
     report(f"wrote {layout.take_json(take_dir)}")
+    try:
+        report(summary(write_report(take_dir, config.max_gap_ms)))
+    except ReportError as e:
+        errors.append(f"no report: {e}")
     if errors:
         raise TakeError("take closed with failures: " + "; ".join(errors))
     return take_dir

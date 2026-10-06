@@ -233,3 +233,39 @@ def test_cli_bad_config(tmp_path, capsys):
             "--name", "T1", "--type", "PERFORMANCE"]
     assert cli.main(argv) == 1
     assert "No such file" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------- sync integration (sync/2)
+
+def test_sync_events_on_the_real_clock_bracket_the_recording(setup):
+    import time
+
+    real_log = []
+
+    def make_source(config):
+        return FakeSource(config, real_log, time.time_ns)
+
+    take_dir = run_take(setup.config, "S1", "T1", PERFORMANCE, wait_for_end=lambda: None,
+                        make_source=make_source, report=lambda _: None)
+    take = read_take(take_dir)
+    last_start = max(t for w, _, t in real_log if w == "start")
+    first_stop = min(t for w, _, t in real_log if w == "stop")
+    assert last_start <= take.start.host_ts_ns <= take.end.host_ts_ns <= first_stop
+
+
+def test_no_start_marker_when_a_source_fails_to_start(setup):
+    trigger = ManualTrigger(setup.clock)
+    setup.fail["body_2"] = {"start"}
+    with pytest.raises(TakeError):
+        run_take(setup.config, "S1", "T1", PERFORMANCE, wait_for_end=lambda: None,
+                 trigger=trigger, make_source=setup.make_source, report=lambda _: None)
+    assert trigger.start is None and trigger.end is None
+
+
+def test_end_marker_precedes_every_stop_even_when_one_fails(setup):
+    setup.fail["body_1"] = {"stop"}
+    with pytest.raises(TakeError):
+        setup.run()
+    take = read_take(setup.take_dir)
+    stops = [t for w, _, t in setup.log if w == "stop"]
+    assert len(stops) == 2 and take.end.host_ts_ns < min(stops)

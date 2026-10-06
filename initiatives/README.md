@@ -22,7 +22,7 @@ Rules specific to this repository:
 
 | Initiative | Status |
 |---|---|
-| [baseline](baseline/baseline.md) | Planned — not started |
+| [baseline](baseline/baseline.md) | In progress — bootstrap done |
 | [studio-setup](studio-setup/studio-setup.md) | Planned — P1 setup; parts blocked on decisions + STREAM source (baseline devices/5) |
 | [live-monitor](live-monitor/live-monitor.md) | Planned — blocked on decisions + STREAM source (baseline devices/5) |
 | [future](future/README.md) | Parked ideas (LED flash sync) — not planned |

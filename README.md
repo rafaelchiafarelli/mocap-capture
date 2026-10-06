@@ -41,9 +41,27 @@ mocap-capture take --session S --name N --type CALIBRATION|PERFORMANCE
 mocap-capture send --session S --take T              # resend anything missing
 ```
 
+## Development
+
+```bash
+make venv   # .venv with Python 3.12, mocap-contracts v0.2.1, the test extras
+make test   # full suite
+```
+
+## config.yaml
+
+So far it has a single section, `cameras`: a list of `CameraConfig` entries
+from `mocap-contracts`. They're checked just like a contract file: only
+declared fields, all required fields present, and the per-message rules (UVC
+needs `device_hint`, STREAM needs a host and ports). Roles must be unique.
+Any other top-level key is an error. Later sections (`handoff`, `board`, ...)
+are added by the tasks that need them. Example:
+[`tests/fixtures/config.yaml`](tests/fixtures/config.yaml).
+
 ## Status
 
-Planned, no code yet. It starts once `mocap-contracts` v0.1.0 is released.
+Baseline in progress: bootstrap done (package, `mocap-capture --version`,
+`load_config`).
 Initiatives:
 - [`baseline`](initiatives/baseline/baseline.md): cameras, recording, sync,
   report, preprocessing, hand-off

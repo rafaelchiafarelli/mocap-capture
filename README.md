@@ -53,4 +53,6 @@ Initiatives:
   live view
 - [`future`](initiatives/future/README.md): parked ideas
 
-Architecture: `mocap-studio/HANDOFF.md`.
+Architecture: `mocap-studio/HANDOFF.md`. The recorder PC in detail
+(components, one take step by step, the WSL2 development setup, build order):
+[`docs/recorder-pc.drawio`](docs/recorder-pc.drawio).

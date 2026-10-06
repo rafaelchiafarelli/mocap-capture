@@ -333,3 +333,16 @@ def test_start_before_prepare_fails(cameras, tmp_path):
     cam = cameras([(b"", False)])
     with pytest.raises(StreamSourceError, match="before prepare"):
         source(cam).start(tmp_path)
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="needs ffmpeg")
+def test_ffmpeg_failure_keeps_only_the_tail_of_its_stderr(tmp_path):
+    from mocap_capture.stream import ERROR_LINES, FfmpegMuxer
+
+    muxer = FfmpegMuxer(tmp_path / "out.mkv", 30)
+    muxer.write((SPS + PPS + IDR + SLICE) * 50)  # not decodable: FFmpeg can't write a header
+    with pytest.raises(StreamSourceError) as e:
+        muxer.close()
+    message = str(e.value)
+    assert "exited" in message
+    assert len(message.splitlines()) <= ERROR_LINES + 1

@@ -38,6 +38,7 @@ defined in `mocap-contracts`.
 mocap-capture camera controls --role body_1          # list every control the camera offers
 mocap-capture camera set --role body_1 exposure_time_absolute=150
 mocap-capture take --session S --name N --type CALIBRATION|PERFORMANCE
+mocap-capture report --session S --take T          # rewrite and print report.json
 mocap-capture send --session S --take T              # resend anything missing
 ```
 
@@ -50,8 +51,10 @@ make test   # full suite
 
 ## config.yaml
 
-Two sections so far. `storage.root` is the data root the session folders
-live under (`<root>/<session>/takes/<take>/`), an absolute path. `cameras` is
+Three sections so far. `storage.root` is the data root the session folders
+live under (`<root>/<session>/takes/<take>/`), an absolute path.
+`report.max_gap_ms` is the longest frame gap a take may have and still be ok
+(shorter gaps are listed, not failed). `cameras` is
 a list of `CameraConfig` entries from `mocap-contracts`. They're checked just like a contract file: only
 declared fields, all required fields present, and the per-message rules (UVC
 needs `device_hint`, STREAM needs a host and ports). Roles must be unique.

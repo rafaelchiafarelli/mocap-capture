@@ -22,6 +22,7 @@ def _write(tmp_path: Path, data) -> Path:
 def test_valid_config():
     config = load_config(FIXTURE)
     assert config.storage_root == Path("/data/mocap")
+    assert config.max_gap_ms == 100
     uvc, stream = config.cameras
     assert uvc.role == "body_1"
     assert uvc.source == CameraSource.Value("CAMERA_SOURCE_UVC")
@@ -52,6 +53,10 @@ def _set(i, field, value):
         (lambda d: d.update(storage={"root": "data"}), "storage.root must be an absolute path"),
         (lambda d: d.update(storage={}), "storage.root must be an absolute path"),
         (lambda d: d["storage"].update(free_gb=50), "storage: unknown key(s) ['free_gb']"),
+        (lambda d: d.pop("report"), "report must be a mapping with max_gap_ms"),
+        (lambda d: d.update(report={"max_gap_ms": 0}), "report.max_gap_ms must be a positive number"),
+        (lambda d: d.update(report={"max_gap_ms": "100"}), "report.max_gap_ms must be a positive number"),
+        (lambda d: d["report"].update(min_fps=25), "report: unknown key(s) ['min_fps']"),
         (lambda d: d.pop("cameras"), "cameras must be a non-empty list"),
         (lambda d: d.update(cameras=[]), "cameras must be a non-empty list"),
         (_drop("notes"), "missing required field(s) ['notes']"),

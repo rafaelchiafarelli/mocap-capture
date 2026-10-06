@@ -1,6 +1,6 @@
 ## 2. Take integration
 
-- **Depends on:** 1; recording/3
+- **Depends on:** recording/2 (`ManualTrigger`), recording/3
 - **Contract:**
   - In: —
   - Requires: START marker after every source has started; END marker before stopping

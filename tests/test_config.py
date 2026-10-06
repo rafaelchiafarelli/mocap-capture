@@ -21,6 +21,7 @@ def _write(tmp_path: Path, data) -> Path:
 
 def test_valid_config():
     config = load_config(FIXTURE)
+    assert config.storage_root == Path("/data/mocap")
     uvc, stream = config.cameras
     assert uvc.role == "body_1"
     assert uvc.source == CameraSource.Value("CAMERA_SOURCE_UVC")
@@ -47,6 +48,10 @@ def _set(i, field, value):
     "edit, message",
     [
         (lambda d: d.update(handoff={}), "unknown section(s) ['handoff']"),
+        (lambda d: d.pop("storage"), "storage must be a mapping with root"),
+        (lambda d: d.update(storage={"root": "data"}), "storage.root must be an absolute path"),
+        (lambda d: d.update(storage={}), "storage.root must be an absolute path"),
+        (lambda d: d["storage"].update(free_gb=50), "storage: unknown key(s) ['free_gb']"),
         (lambda d: d.pop("cameras"), "cameras must be a non-empty list"),
         (lambda d: d.update(cameras=[]), "cameras must be a non-empty list"),
         (_drop("notes"), "missing required field(s) ['notes']"),

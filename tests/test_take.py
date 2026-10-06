@@ -1,4 +1,6 @@
+import dataclasses
 import itertools
+import time
 from pathlib import Path
 
 import pytest
@@ -63,6 +65,7 @@ class FakeSource:
 @pytest.fixture
 def setup(tmp_path):
     data = {"storage": {"root": str(tmp_path / "data")}, "report": {"max_gap_ms": 100},
+            "take": {"post_roll_ms": 0},
             "cameras": [stream_camera("body_1", 21), stream_camera("body_2", 22)]}
     path = tmp_path / "config.yaml"
     path.write_text(yaml.safe_dump(data))
@@ -238,8 +241,6 @@ def test_cli_bad_config(tmp_path, capsys):
 # ---------------------------------------------------------------- sync integration (sync/2)
 
 def test_sync_events_on_the_real_clock_bracket_the_recording(setup):
-    import time
-
     real_log = []
 
     def make_source(config):
@@ -277,3 +278,80 @@ def test_take_writes_its_report(setup):
     assert report.take_id == "T1"
     assert report.ok == Flag.Value("FLAG_OFF")  # the fake sources wrote no timestamps
     assert any(line.startswith("take T1: NOT OK") for line in setup.reported)
+
+
+# ---------------------------------------------------------------- post-roll (verification/2)
+
+class LaggingSource(FakeSource):
+    """Frames at 30 fps on the real clock, arriving `lag_ns` after capture: a stop
+    cuts off whatever was captured in the last `lag_ns`."""
+
+    def __init__(self, config, lag_ns):
+        super().__init__(config, [], time.time_ns)
+        self.lag_ns = lag_ns
+
+    def start(self, take_dir):
+        super().start(take_dir)
+        self.started_ns = time.time_ns() - 200_000_000  # frames captured before START arrived
+
+    def stop(self):
+        super().stop()
+        self.stopped_ns = time.time_ns()
+
+    def collect(self, take_dir):
+        files = super().collect(take_dir)
+        last = self.stopped_ns - self.lag_ns
+        rows = [f"{i},{ts}" for i, ts in enumerate(range(self.started_ns, last, 33_333_333))]
+        files[1].write_text("frame,host_ts_ns\n" + "\n".join(rows) + "\n")
+        return files
+
+
+def post_roll(setup, ms):
+    return dataclasses.replace(setup.config, post_roll_ms=ms)
+
+
+def test_post_roll_happens_between_end_and_the_stops(setup):
+    sleeps = []
+
+    def sleep(seconds):
+        sleeps.append(seconds)
+        setup.log.append(("sleep", None, setup.clock()))
+
+    run_take(post_roll(setup, 500), "S1", "T1", PERFORMANCE, wait_for_end=lambda: None,
+             trigger=ManualTrigger(setup.clock), make_source=setup.make_source,
+             report=setup.reported.append, sleep=sleep)
+    assert sleeps == [0.5]
+    calls = [w for w, _, _ in setup.log]
+    assert calls.index("sleep") < calls.index("stop")
+    take = read_take(setup.take_dir)
+    assert take.end.host_ts_ns < when(setup.log, "sleep")
+    assert "post-roll: 500 ms" in setup.reported
+
+
+def test_stops_come_at_least_post_roll_after_end(setup):
+    log = []
+    run_take(post_roll(setup, 100), "S1", "T1", PERFORMANCE, wait_for_end=lambda: None,
+             make_source=lambda c: FakeSource(c, log, time.time_ns), report=lambda _: None)
+    first_stop = min(t for w, _, t in log if w == "stop")
+    assert first_stop - read_take(setup.take_dir).end.host_ts_ns >= 100_000_000
+
+
+@pytest.mark.parametrize("ms, ok", [(150, True), (0, False)])
+def test_post_roll_keeps_end_inside_lagging_cameras(setup, ms, ok):
+    run_take(post_roll(setup, ms), "S1", "T1", PERFORMANCE, wait_for_end=lambda: time.sleep(0.3),
+             make_source=lambda c: LaggingSource(c, lag_ns=50_000_000), report=lambda _: None)
+    report = from_json(TakeReport, layout.report_json(setup.take_dir).read_text())
+    assert (report.ok == Flag.Value("FLAG_ON")) is ok, list(report.problems)
+    if not ok:
+        assert all("END" in p and "outside its range" in p for p in report.problems)
+
+
+def test_ctrl_c_cuts_the_post_roll_short(setup):
+    def interrupted(_):
+        raise KeyboardInterrupt
+
+    run_take(post_roll(setup, 500), "S1", "T1", PERFORMANCE, wait_for_end=lambda: None,
+             make_source=setup.make_source, report=setup.reported.append, sleep=interrupted)
+    assert "post-roll cut short" in setup.reported
+    assert [w for w, _, _ in setup.log].count("stop") == 2
+    assert read_take(setup.take_dir).end.kind == END

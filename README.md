@@ -51,10 +51,12 @@ make test   # full suite
 
 ## config.yaml
 
-Three sections so far. `storage.root` is the data root the session folders
+Four sections so far. `storage.root` is the data root the session folders
 live under (`<root>/<session>/takes/<take>/`), an absolute path.
 `report.max_gap_ms` is the longest frame gap a take may have and still be ok
-(shorter gaps are listed, not failed). `cameras` is
+(shorter gaps are listed, not failed). `take.post_roll_ms` is how long every
+source keeps recording after END, so the frames captured before END have
+arrived (STREAM frames arrive ~100 ms after capture). `cameras` is
 a list of `CameraConfig` entries from `mocap-contracts`. They're checked just like a contract file: only
 declared fields, all required fields present, and the per-message rules (UVC
 needs `device_hint`, STREAM needs a host and ports). Roles must be unique.

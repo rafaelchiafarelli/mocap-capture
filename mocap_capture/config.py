@@ -2,6 +2,8 @@
 
 `storage.root` is the data root the session folders live under
 (`mocap_contracts.layout`): an absolute path, required, never guessed.
+`report.max_gap_ms` is the longest frame gap a take may have and still be
+ok (shorter gaps are listed in the report, not failed).
 Each `cameras` entry is a `CameraConfig` from
 mocap-contracts and is checked exactly like a contract file: declared
 fields only, `required` enforced, plus the per-message rules. Every other
@@ -19,8 +21,9 @@ from pathlib import Path
 import yaml
 from mocap_contracts import CameraConfig, ContractError, from_json
 
-SECTIONS = ("storage", "cameras")
+SECTIONS = ("storage", "report", "cameras")
 STORAGE_KEYS = ("root",)
+REPORT_KEYS = ("max_gap_ms",)
 
 
 class ConfigError(ValueError):
@@ -30,6 +33,7 @@ class ConfigError(ValueError):
 @dataclass(frozen=True)
 class Config:
     storage_root: Path
+    max_gap_ms: float
     cameras: tuple[CameraConfig, ...]
 
 
@@ -48,6 +52,7 @@ def load_config(path: str | PathLike[str]) -> Config:
     if unknown:
         raise ConfigError(f"{path}: unknown section(s) {unknown}")
     storage_root = _storage(path, data.get("storage"))
+    max_gap_ms = _report(path, data.get("report"))
     entries = data.get("cameras")
     if not isinstance(entries, list) or not entries:
         raise ConfigError(f"{path}: cameras must be a non-empty list")
@@ -57,7 +62,19 @@ def load_config(path: str | PathLike[str]) -> Config:
     duplicates = sorted({r for r in roles if roles.count(r) > 1})
     if duplicates:
         raise ConfigError(f"{path}: duplicate role(s) {duplicates}")
-    return Config(storage_root=storage_root, cameras=cameras)
+    return Config(storage_root=storage_root, max_gap_ms=max_gap_ms, cameras=cameras)
+
+
+def _report(path: str | PathLike[str], report: object) -> float:
+    if not isinstance(report, dict):
+        raise ConfigError(f"{path}: report must be a mapping with max_gap_ms")
+    unknown = sorted(set(report) - set(REPORT_KEYS))
+    if unknown:
+        raise ConfigError(f"{path}: report: unknown key(s) {unknown}")
+    limit = report.get("max_gap_ms")
+    if isinstance(limit, bool) or not isinstance(limit, (int, float)) or limit <= 0:
+        raise ConfigError(f"{path}: report.max_gap_ms must be a positive number, got {limit!r}")
+    return float(limit)
 
 
 def _storage(path: str | PathLike[str], storage: object) -> Path:

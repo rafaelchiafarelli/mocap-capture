@@ -6,6 +6,7 @@
        then mark START and write take.json (no end yet)
     3. record until the operator ends the take (Enter, or Ctrl+C)
     4. mark END, stop every source, collect their files, rewrite take.json
+    5. write report.json (the take report) and print its summary
 
 A source that fails to stop or collect doesn't keep the others from
 stopping; the take is still closed and the failures are raised together.
@@ -21,6 +22,7 @@ from mocap_contracts import ContractError, Take, TakeCamera, TakeType, layout, t
 
 import mocap_capture.stream  # noqa: F401  (registers the STREAM source)
 from mocap_capture.config import Config
+from mocap_capture.report import ReportError, summary, write_report
 from mocap_capture.sources import CameraSource, create_source
 from mocap_capture.sync import END, START, ManualTrigger
 
@@ -101,6 +103,10 @@ def run_take(
             report(f"{source.config.role}: {problem}")
     _write(take_dir, take)
     report(f"wrote {layout.take_json(take_dir)}")
+    try:
+        report(summary(write_report(take_dir, config.max_gap_ms)))
+    except ReportError as e:
+        errors.append(f"no report: {e}")
     if errors:
         raise TakeError("take closed with failures: " + "; ".join(errors))
     return take_dir

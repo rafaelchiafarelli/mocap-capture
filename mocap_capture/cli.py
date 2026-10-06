@@ -19,6 +19,11 @@ def build_parser() -> argparse.ArgumentParser:
     take.add_argument("--session", required=True)
     take.add_argument("--name", required=True, help="the take id, also its folder name")
     take.add_argument("--type", required=True, choices=["PERFORMANCE", "CALIBRATION"])
+
+    report = commands.add_parser("report", help="(re)write a take's report.json and print it")
+    report.add_argument("--config", default="config.yaml", help="default: ./config.yaml")
+    report.add_argument("--session", required=True)
+    report.add_argument("--take", required=True)
     return parser
 
 
@@ -27,6 +32,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command == "take":
         return _take(args)
+    if args.command == "report":
+        return _report(args)
     parser.print_help()
     return 0
 
@@ -50,3 +57,20 @@ def _take(args: argparse.Namespace) -> int:
         print("mocap-capture take: interrupted before START, nothing recorded", file=sys.stderr)
         return 130
     return 0
+
+
+def _report(args: argparse.Namespace) -> int:
+    """0 if the take is ok, 2 if it isn't, 1 if it can't be reported on."""
+    from mocap_contracts import ContractError, Flag, layout
+
+    from mocap_capture.report import ReportError, summary, write_report
+
+    try:
+        config = load_config(args.config)
+        take_dir = layout.take_dir(config.storage_root, args.session, args.take)
+        report = write_report(take_dir, config.max_gap_ms)
+    except (ConfigError, ContractError, ReportError) as e:
+        print(f"mocap-capture report: {e}", file=sys.stderr)
+        return 1
+    print(summary(report))
+    return 0 if report.ok == Flag.Value("FLAG_ON") else 2

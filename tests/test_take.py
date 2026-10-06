@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 import yaml
-from mocap_contracts import Take, TakeType, from_json, layout
+from mocap_contracts import Flag, Take, TakeReport, TakeType, from_json, layout
 
 from mocap_capture import cli
 from mocap_capture.config import load_config
@@ -62,7 +62,7 @@ class FakeSource:
 
 @pytest.fixture
 def setup(tmp_path):
-    data = {"storage": {"root": str(tmp_path / "data")},
+    data = {"storage": {"root": str(tmp_path / "data")}, "report": {"max_gap_ms": 100},
             "cameras": [stream_camera("body_1", 21), stream_camera("body_2", 22)]}
     path = tmp_path / "config.yaml"
     path.write_text(yaml.safe_dump(data))
@@ -269,3 +269,11 @@ def test_end_marker_precedes_every_stop_even_when_one_fails(setup):
     take = read_take(setup.take_dir)
     stops = [t for w, _, t in setup.log if w == "stop"]
     assert len(stops) == 2 and take.end.host_ts_ns < min(stops)
+
+
+def test_take_writes_its_report(setup):
+    take_dir = setup.run()
+    report = from_json(TakeReport, layout.report_json(take_dir).read_text())
+    assert report.take_id == "T1"
+    assert report.ok == Flag.Value("FLAG_OFF")  # the fake sources wrote no timestamps
+    assert any(line.startswith("take T1: NOT OK") for line in setup.reported)

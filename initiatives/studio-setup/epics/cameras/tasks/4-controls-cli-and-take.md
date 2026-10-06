@@ -1,9 +1,9 @@
 ## 4. Camera controls: live CLI and take integration
 
-- **Depends on:** 2; 3
+- **Depends on:** 3
 - **Contract:**
   - In: `config.yaml` `controls:` per role (any native key: value the device offers); the operator, live during setup
-  - Requires: one interface over UVC (task 2) and STREAM (task 3); nothing is applied unless declared in `config.yaml` or typed by the operator
+  - Requires: one controls interface, implemented for STREAM (task 3), so other sources can add theirs; nothing is applied unless declared in `config.yaml` or typed by the operator
   - Delivers:
     - `mocap-capture camera controls --role R` lists every control, with type, range, options and current value
     - `mocap-capture camera set --role R key=value …` sets controls live and prints each result
@@ -12,4 +12,4 @@
     - `take.json` gets `control_results` (full native record) and `applied_controls` (normalized `CameraControls` summary) per role
 - **Pre-work:** none
 - **Out of scope:** choosing the values (the setup checklist, `procedure/1`)
-- **Tests:** fakes for both backends: list/set/save round trip; a declared control that fails blocks the take; `take.json` carries both records
+- **Tests:** a fake backend: list/set/save round trip; a declared control that fails blocks the take; `take.json` carries both records

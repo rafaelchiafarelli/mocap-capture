@@ -1,6 +1,6 @@
 ## 1. TakeReport
 
-- **Depends on:** recording/4; sync/2
+- **Depends on:** devices/5 (timestamps); sync/2
 - **Contract:**
   - In: take_dir
   - Requires: measured fps and coefficient of variation, gaps > 1.5 periods, START/END `SyncEvent`s present and inside every camera's timestamp range

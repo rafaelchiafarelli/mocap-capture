@@ -6,18 +6,18 @@ recording takes (P2), up to handing each finished file to the processing PC.
 ## Where it sits in the architecture
 
 ```
-UVC webcams (USB) ─────┐
-                       ├──▶ mocap-capture ──rsync per file──▶ processing PC (mocap-extract)
-STREAM tablets (Wi-Fi) ┘    on the recorder   └──Harpia ZeroMQ events: TakeClosed, CameraFileReady
-  running mocap-camera-app
+STREAM tablets (Wi-Fi) ──▶ mocap-capture ──rsync per file──▶ processing PC (mocap-extract)
+  running mocap-camera-app   on the recorder  └──Harpia ZeroMQ events: TakeClosed, CameraFileReady
 ```
 
-- **Cameras**, behind one `CameraSource` interface:
-  - `UVC`: webcams through FFmpeg, recorded without re-encoding
+- **Cameras**, behind one `CameraSource` interface (a registry per source
+  kind, so other image sources can be added):
   - `STREAM`: tablets running `mocap-camera-app`, received over stream
-    protocol v1
+    protocol v1 and recorded without re-encoding
+  - USB webcams (UVC) are not used; their tasks are parked in
+    [`initiatives/future/uvc/`](initiatives/future/uvc/)
 - **Camera controls:** every control a camera offers can be listed and set,
-  V4L2 for webcams and Camera2 for tablets. Values are read back from the
+  Camera2 on the tablets. Values are read back from the
   device and recorded per take.
 - **Recording:** one file per camera per take. Every frame is timestamped on
   the recorder's clock, and START/END sync markers are recorded too.
@@ -44,7 +44,7 @@ mocap-capture send --session S --take T              # resend anything missing
 ## Development
 
 ```bash
-make venv   # .venv with Python 3.12, mocap-contracts v0.2.1, the test extras
+make venv   # contracts submodule (stream v1 fixtures), .venv with Python 3.12, mocap-contracts v0.2.1, test extras
 make test   # full suite
 ```
 

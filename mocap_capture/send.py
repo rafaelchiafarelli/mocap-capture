@@ -4,8 +4,10 @@
        CameraFileReady (TIMESTAMPS), then TakeClosed. TakeClosed means all of
        these have arrived, so the processing PC can align right away.
     2. Per role, independently: preprocess (if `prep/<role>.mkv` isn't there
-       yet), send it, then its CameraFileReady (VIDEO). Preprocessing starts
-       at once in parallel; sending waits for TakeClosed.
+       yet), send take.json again (it now has the role's applied_preprocess),
+       then the video and its CameraFileReady (VIDEO). Preprocessing starts at
+       once in parallel; sending waits for TakeClosed. So a VIDEO event means
+       take.json with that role's applied_preprocess has arrived.
     3. report.json, which gates nothing.
 
 For every file: the file, then its sidecar, then the event, so an event never
@@ -38,7 +40,7 @@ from mocap_contracts import (
 
 from mocap_capture import transfer
 from mocap_capture.handoff import HandoffError, write_sidecar
-from mocap_capture.preprocess import packet_count, preprocess_role
+from mocap_capture.preprocess import packet_count, preprocess_role, take_lock
 
 TIMESTAMPS = FileKind.Value("FILE_KIND_TIMESTAMPS")
 VIDEO = FileKind.Value("FILE_KIND_VIDEO")
@@ -69,6 +71,7 @@ def handoff_take(
         while not closed_sent.wait(0.1):
             if aborted.is_set():
                 return
+        _send_take_json(take_dir, target)
         rel = f"prep/{role}.mkv"
         arrived = transfer.send_file(take_dir, rel, target, with_sidecar=False)
         first, last, _ = _span(take_dir, role)
@@ -111,7 +114,7 @@ def _closing_files(take, take_dir, storage_root, roles, target, publisher, repor
     if session.id != take.session_id:
         raise HandoffError(f"{session_path} is for session {session.id!r}, not {take.session_id!r}")
     transfer.send_session_file(storage_root, take.session_id, "session.json", target)
-    transfer.send_file(take_dir, "take.json", target)
+    _send_take_json(take_dir, target)
     for role in roles:
         rel = str(layout.raw_timestamps(take_dir, role).relative_to(take_dir))
         arrived = transfer.send_file(take_dir, rel, target, with_sidecar=False)
@@ -124,6 +127,12 @@ def _closing_files(take, take_dir, storage_root, roles, target, publisher, repor
     closed.roles.extend(roles)
     _announce(take_dir, target, publisher, closed)
     report(f"take {take.id}: TakeClosed")
+
+
+def _send_take_json(take_dir: Path, target) -> None:
+    """take.json, never while preprocessing is rewriting it."""
+    with take_lock(take_dir):
+        transfer.send_file(take_dir, "take.json", target)
 
 
 def _announce(take_dir: Path, target, publisher, event) -> None:

@@ -12,6 +12,7 @@ from mocap_contracts import (
     SyncEvent,
     SyncKind,
     SyncSource,
+    PreprocessSpec,
     Take,
     TakeCamera,
     TakeClosed,
@@ -24,6 +25,7 @@ from mocap_contracts import (
 from mocap_capture import send as send_module
 from mocap_capture import transfer
 from mocap_capture.handoff import HandoffError
+from mocap_capture.preprocess import take_lock
 from mocap_capture.send import handoff_take
 from mocap_capture.transfer import LocalTarget
 
@@ -104,8 +106,14 @@ class Setup:
         return rsync
 
     def preprocess(self, take_dir, role):
+        """Like the real one: writes prep/ and records applied_preprocess in take.json."""
         self.preprocess_hook.get(role, lambda: None)()
         self.preprocessed.append(role)
+        with take_lock(take_dir):
+            take = from_json(Take, layout.take_json(take_dir).read_text())
+            cam = next(c for c in take.cameras if c.config.role == role)
+            cam.applied_preprocess.CopyFrom(PreprocessSpec(output_width=32, output_height=32))
+            layout.take_json(take_dir).write_text(to_json(take))
         out = take_dir / "prep" / f"{role}.mkv"
         out.parent.mkdir(exist_ok=True)
         out.write_bytes(f"prep {role}".encode())
@@ -140,6 +148,9 @@ def test_order_session_take_timestamps_closed_then_videos(setup):
         video = [f"file prep/{role}.mkv", f"file prep/{role}.mkv.ready.json", f"event VIDEO {role}"]
         positions = [e.index(x) for x in video]
         assert positions == sorted(positions) and positions[0] > e.index("event TakeClosed")
+        # take.json went again after TakeClosed, before this role's video
+        resent = [i for i, x in enumerate(e) if x == "file take.json" and i > e.index("event TakeClosed")]
+        assert resent and min(resent) < positions[0]
     assert e[-1] == "file report.json"
     assert not any("raw/" in x and x.endswith(".mkv") for x in e)  # raw videos stay on the recorder
 
@@ -155,6 +166,8 @@ def test_what_arrived_matches_its_sidecars(setup):
             assert ready.size_bytes == setup.remote(rel).stat().st_size
             assert ready.sha256 == transfer._sha256(setup.remote(rel))
             assert (ready.frames, ready.first_ts_ns, ready.last_ts_ns) == (3, 500, 9500)
+    take = from_json(Take, setup.remote("take.json").read_text())
+    assert all(c.HasField("applied_preprocess") for c in take.cameras)
     closed = from_json(TakeClosed, setup.remote("closed.json").read_text())
     assert list(closed.roles) == list(ROLES) and closed.end.host_ts_ns == 9_000
 

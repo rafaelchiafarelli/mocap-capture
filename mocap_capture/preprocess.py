@@ -49,7 +49,7 @@ def preprocess_role(take_dir: Path, role: str) -> Path:
         raise PreprocessError(f"{role}: {raw_packets} frames in, {prep_packets} out")
     os.replace(tmp, out)
     if spec is not None:
-        with _locked(take_dir):
+        with take_lock(take_dir):
             take = _read_take(take_dir)
             _camera(take, role).applied_preprocess.CopyFrom(spec)
             _write_take(take_dir, take)
@@ -112,7 +112,8 @@ def _camera(take: Take, role: str):
 
 
 @contextmanager
-def _locked(take_dir: Path) -> Iterator[None]:
+def take_lock(take_dir: Path) -> Iterator[None]:
+    """Held while take.json is rewritten (here) or copied (the hand-off)."""
     with open(take_dir / ".take.lock", "w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         yield

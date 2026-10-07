@@ -16,6 +16,7 @@ still has it).
 from __future__ import annotations
 
 import os
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -40,9 +41,14 @@ def sidecar_path(take_dir: Path, event: TakeClosed | CameraFileReady) -> Path:
 
 
 def write_sidecar(take_dir: Path, event: TakeClosed | CameraFileReady) -> Path:
-    """The event as JSON, written atomically (to_json also checks the contract)."""
+    """The event as JSON, written atomically (to_json also checks the contract).
+
+    An identical sidecar is left untouched, so a resend doesn't copy it again.
+    """
     path = sidecar_path(take_dir, event)
     text = to_json(event)
+    if path.is_file() and path.read_text() == text:
+        return path
     tmp = path.with_name(path.name + ".tmp")
     tmp.write_text(text)
     os.replace(tmp, path)
@@ -52,6 +58,7 @@ def write_sidecar(take_dir: Path, event: TakeClosed | CameraFileReady) -> Path:
 class Publisher:
     def __init__(self, handoff: Handoff, ctx: Any | None = None):
         self._ctx = ctx or zmq.Context.instance()
+        self._lock = threading.Lock()  # ZeroMQ sockets aren't thread-safe; roles send in parallel
         self._senders = {
             TakeClosed: transport.new_sender(TakeClosed, self._ctx, handoff.take_closed_endpoint),
             CameraFileReady: transport.new_sender(
@@ -62,9 +69,15 @@ class Publisher:
     def publish(self, take_dir: Path, event: TakeClosed | CameraFileReady) -> Path:
         """Write the sidecar, then send; returns the sidecar's path."""
         path = write_sidecar(take_dir, event)
-        if not self._senders[type(event)].send(event):
-            raise HandoffError(f"{type(event).__name__} not queued (sidecar written: {path})")
+        self.send(event)
         return path
+
+    def send(self, event: TakeClosed | CameraFileReady) -> None:
+        """Send only (the sidecar is already written and delivered)."""
+        with self._lock:
+            queued = self._senders[type(event)].send(event)
+        if not queued:
+            raise HandoffError(f"{type(event).__name__} for take {event.take_id} not queued")
 
     def close(self, flush_ms: int = FLUSH_MS) -> None:
         for sender in self._senders.values():

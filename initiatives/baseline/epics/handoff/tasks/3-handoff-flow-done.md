@@ -9,5 +9,6 @@
     3. `report.json` follows when it's ready (it doesn't gate processing).
   - Delivers: automatic hand-off at the end of `mocap-capture take`, plus `mocap-capture send --session S --take T` to resend anything missing (idempotent)
 - **Pre-work:** none. **Decided 2026-10-06: `raw/` videos are not handed off.** They stay on the recorder as the archive. Timestamps always travel.
+- **Decided 2026-10-06:** a missing `session.json` doesn't stop the take; the hand-off stops before sending anything, and `mocap-capture send` finishes it once the file is written.
 - **Out of scope:** live forwarding during the take (phase 2)
 - **Tests:** with fakes: the order is session.json and take.json → timestamps → `TakeClosed` → videos per role; a slow role doesn't delay the others; the resend sends only what's missing

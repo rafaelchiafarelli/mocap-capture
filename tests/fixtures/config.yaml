@@ -6,6 +6,10 @@ take:
   post_roll_ms: 500
 report:
   max_gap_ms: 100
+handoff:
+  host: 192.168.0.10
+  take_closed_port: 5600
+  file_ready_port: 5601
 cameras:
   - role: body_1
     source: CAMERA_SOURCE_UVC

@@ -1,0 +1,41 @@
+# A UVC camera (valid config, but webcams are parked: no source is registered
+# for it) and a streaming tablet.
+storage:
+  root: /data/mocap
+take:
+  post_roll_ms: 500
+report:
+  max_gap_ms: 100
+handoff:
+  host: 192.168.0.10
+  take_closed_port: 5600
+  file_ready_port: 5601
+  ssh_user: rafael
+  data_root: /data/mocap
+cameras:
+  - role: body_1
+    source: CAMERA_SOURCE_UVC
+    width: 1920
+    height: 1080
+    fps: 30
+    notes: front webcam
+    device_hint: usb-046d_HD_Pro_Webcam_C920-video-index0
+    preprocess: none
+    controls:
+      - key: exposure_time_absolute
+        value: {int_value: 150}
+  - role: body_2
+    source: CAMERA_SOURCE_STREAM
+    width: 1920
+    height: 1080
+    fps: 30
+    notes: left tablet
+    stream_host: 192.168.1.21
+    video_port: 8080
+    sync_port: 8081
+    control_port: 8082
+    stats_port: 8083
+    preprocess:
+      crop: {x: 240, y: 0, width: 1440, height: 1080}
+      output_width: 960
+      output_height: 720

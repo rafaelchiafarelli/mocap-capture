@@ -67,6 +67,8 @@ class FakeSource:
 def setup(tmp_path):
     data = {"storage": {"root": str(tmp_path / "data")}, "report": {"max_gap_ms": 100},
             "take": {"post_roll_ms": 0},
+            "handoff": {"host": "127.0.0.1", "take_closed_port": 5600, "file_ready_port": 5601,
+                        "ssh_user": "rafael", "data_root": "/data/mocap"},
             "cameras": [stream_camera("body_1", 21), stream_camera("body_2", 22)]}
     path = tmp_path / "config.yaml"
     path.write_text(yaml.safe_dump(data))
@@ -216,11 +218,14 @@ def test_cli_take(setup, monkeypatch, capsys):
     import mocap_capture.take as take_module
 
     monkeypatch.setattr("builtins.input", lambda prompt="": "")
+    handed_off = []
+    monkeypatch.setattr(cli, "_handoff", lambda config, take_dir, cmd: handed_off.append(take_dir) or 0)
     monkeypatch.setattr(take_module, "run_take", _with_default_source(take_module.run_take, setup))
     argv = ["take", "--config", str(setup.config_path), "--session", "S1", "--name", "T1",
             "--type", "PERFORMANCE"]
     assert cli.main(argv) == 0
     assert read_take(setup.take_dir).end.kind == END
+    assert handed_off == [setup.take_dir]
     assert cli.main(argv) == 1
     assert "already exists" in capsys.readouterr().err
 

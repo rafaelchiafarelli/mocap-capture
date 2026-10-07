@@ -10,6 +10,9 @@ Every camera declares `preprocess:`, either a `PreprocessSpec` (crop inside
 the source frame, output size) or the word `none`; a missing one is an error,
 never a default. In the resulting `CameraConfig` an absent `preprocess`
 means none, as the contract says.
+`handoff` declares the processing PC: its `host`, the ports its
+`mocap-extract watch` binds for `TakeClosed` and `CameraFileReady`, and the
+`ssh_user` and `data_root` (absolute, on that PC) files are rsynced into.
 Each `cameras` entry is a `CameraConfig` from
 mocap-contracts and is checked exactly like a contract file: declared
 fields only, `required` enforced, plus the per-message rules. Every other
@@ -22,12 +25,13 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from os import PathLike
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import yaml
 from mocap_contracts import CameraConfig, ContractError, PreprocessSpec, from_json
 
-SECTIONS = ("storage", "take", "report", "cameras")
+SECTIONS = ("storage", "take", "report", "handoff", "cameras")
+HANDOFF_KEYS = ("host", "take_closed_port", "file_ready_port", "ssh_user", "data_root")
 STORAGE_KEYS = ("root",)
 
 
@@ -36,10 +40,28 @@ class ConfigError(ValueError):
 
 
 @dataclass(frozen=True)
+class Handoff:
+    host: str
+    take_closed_port: int
+    file_ready_port: int
+    ssh_user: str
+    data_root: PurePosixPath
+
+    @property
+    def take_closed_endpoint(self) -> str:
+        return f"tcp://{self.host}:{self.take_closed_port}"
+
+    @property
+    def file_ready_endpoint(self) -> str:
+        return f"tcp://{self.host}:{self.file_ready_port}"
+
+
+@dataclass(frozen=True)
 class Config:
     storage_root: Path
     post_roll_ms: float
     max_gap_ms: float
+    handoff: Handoff
     cameras: tuple[CameraConfig, ...]
 
     def preprocess(self, role: str) -> PreprocessSpec | None:
@@ -67,6 +89,7 @@ def load_config(path: str | PathLike[str]) -> Config:
     storage_root = _storage(path, data.get("storage"))
     post_roll_ms = _number(path, data.get("take"), "take", "post_roll_ms", allow_zero=True)
     max_gap_ms = _number(path, data.get("report"), "report", "max_gap_ms")
+    handoff = _handoff(path, data.get("handoff"))
     entries = data.get("cameras")
     if not isinstance(entries, list) or not entries:
         raise ConfigError(f"{path}: cameras must be a non-empty list")
@@ -77,7 +100,8 @@ def load_config(path: str | PathLike[str]) -> Config:
     if duplicates:
         raise ConfigError(f"{path}: duplicate role(s) {duplicates}")
     return Config(
-        storage_root=storage_root, post_roll_ms=post_roll_ms, max_gap_ms=max_gap_ms, cameras=cameras
+        storage_root=storage_root, post_roll_ms=post_roll_ms, max_gap_ms=max_gap_ms,
+        handoff=handoff, cameras=cameras,
     )
 
 
@@ -96,6 +120,32 @@ def _number(
         what = "a non-negative" if allow_zero else "a positive"
         raise ConfigError(f"{path}: {name}.{key} must be {what} number, got {value!r}")
     return float(value)
+
+
+def _handoff(path: str | PathLike[str], handoff: object) -> Handoff:
+    if not isinstance(handoff, dict):
+        raise ConfigError(f"{path}: handoff must be a mapping with {list(HANDOFF_KEYS)}")
+    unknown = sorted(set(handoff) - set(HANDOFF_KEYS))
+    if unknown:
+        raise ConfigError(f"{path}: handoff: unknown key(s) {unknown}")
+    host = handoff.get("host")
+    if not isinstance(host, str) or not host:
+        raise ConfigError(f"{path}: handoff.host must be a host name or IP, got {host!r}")
+    ports = {}
+    for key in ("take_closed_port", "file_ready_port"):
+        port = handoff.get(key)
+        if isinstance(port, bool) or not isinstance(port, int) or not 1 <= port <= 65535:
+            raise ConfigError(f"{path}: handoff.{key} must be a port 1..65535, got {port!r}")
+        ports[key] = port
+    if ports["take_closed_port"] == ports["file_ready_port"]:
+        raise ConfigError(f"{path}: handoff ports must differ (one per event type)")
+    user = handoff.get("ssh_user")
+    if not isinstance(user, str) or not user:
+        raise ConfigError(f"{path}: handoff.ssh_user must be a user name, got {user!r}")
+    root = handoff.get("data_root")
+    if not isinstance(root, str) or not PurePosixPath(root).is_absolute():
+        raise ConfigError(f"{path}: handoff.data_root must be an absolute path, got {root!r}")
+    return Handoff(host=host, ssh_user=user, data_root=PurePosixPath(root), **ports)
 
 
 def _storage(path: str | PathLike[str], storage: object) -> Path:

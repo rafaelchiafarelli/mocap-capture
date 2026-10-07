@@ -24,6 +24,8 @@ def test_valid_config():
     assert config.storage_root == Path("/data/mocap")
     assert config.max_gap_ms == 100
     assert config.post_roll_ms == 500
+    assert config.handoff.take_closed_endpoint == "tcp://192.168.0.10:5600"
+    assert config.handoff.file_ready_endpoint == "tcp://192.168.0.10:5601"
     uvc, stream = config.cameras
     assert uvc.role == "body_1"
     assert uvc.source == CameraSource.Value("CAMERA_SOURCE_UVC")
@@ -53,7 +55,7 @@ def _set(i, field, value):
 @pytest.mark.parametrize(
     "edit, message",
     [
-        (lambda d: d.update(handoff={}), "unknown section(s) ['handoff']"),
+        (lambda d: d.update(board={}), "unknown section(s) ['board']"),
         (lambda d: d.pop("storage"), "storage must be a mapping with root"),
         (lambda d: d.update(storage={"root": "data"}), "storage.root must be an absolute path"),
         (lambda d: d.update(storage={}), "storage.root must be an absolute path"),
@@ -63,6 +65,11 @@ def _set(i, field, value):
         (lambda d: d.update(report={"max_gap_ms": "100"}), "report.max_gap_ms must be a positive number"),
         (lambda d: d["report"].update(min_fps=25), "report: unknown key(s) ['min_fps']"),
         (lambda d: d.pop("take"), "take must be a mapping with post_roll_ms"),
+        (lambda d: d.pop("handoff"), "handoff must be a mapping with"),
+        (lambda d: d["handoff"].pop("host"), "handoff.host must be a host name or IP"),
+        (lambda d: d["handoff"].update(file_ready_port=0), "handoff.file_ready_port must be a port 1..65535"),
+        (lambda d: d["handoff"].update(file_ready_port=5600), "handoff ports must differ"),
+        (lambda d: d["handoff"].update(user="me"), "handoff: unknown key(s) ['user']"),
         (lambda d: d.update(take={"post_roll_ms": -1}), "take.post_roll_ms must be a non-negative number"),
         (lambda d: d.pop("cameras"), "cameras must be a non-empty list"),
         (lambda d: d.update(cameras=[]), "cameras must be a non-empty list"),

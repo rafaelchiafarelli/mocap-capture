@@ -21,6 +21,7 @@ def stream_camera(role: str, last_octet: int) -> dict:
         "role": role, "source": "CAMERA_SOURCE_STREAM", "width": 1920, "height": 1080,
         "fps": 30, "notes": "tablet", "stream_host": f"192.168.1.{last_octet}",
         "video_port": 8080, "sync_port": 8081, "control_port": 8082, "stats_port": 8083,
+        "preprocess": "none",
     }
 
 

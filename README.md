@@ -58,7 +58,8 @@ live under (`<root>/<session>/takes/<take>/`), an absolute path.
 source keeps recording after END, so the frames captured before END have
 arrived (STREAM frames arrive ~100 ms after capture). `handoff` declares the
 processing PC: its `host` and the two ports its `mocap-extract watch` binds
-(`take_closed_port`, `file_ready_port`). `cameras` is
+(`take_closed_port`, `file_ready_port`), and the `ssh_user` and absolute
+`data_root` that files are rsynced into there (rsync 3.2.3+ on both sides). `cameras` is
 a list of `CameraConfig` entries from `mocap-contracts`. They're checked just like a contract file: only
 declared fields, all required fields present, and the per-message rules (UVC
 needs `device_hint`, STREAM needs a host and ports). Roles must be unique.

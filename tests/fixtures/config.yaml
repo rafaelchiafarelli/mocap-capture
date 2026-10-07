@@ -10,6 +10,8 @@ handoff:
   host: 192.168.0.10
   take_closed_port: 5600
   file_ready_port: 5601
+  ssh_user: rafael
+  data_root: /data/mocap
 cameras:
   - role: body_1
     source: CAMERA_SOURCE_UVC

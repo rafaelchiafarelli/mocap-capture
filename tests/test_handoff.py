@@ -1,4 +1,5 @@
 import socket
+from pathlib import PurePosixPath
 
 import pytest
 import zmq
@@ -44,7 +45,8 @@ def ready(path="raw/body_1.timestamps.csv") -> CameraFileReady:
 
 @pytest.fixture
 def handoff():
-    return Handoff(host="127.0.0.1", take_closed_port=free_port(), file_ready_port=free_port())
+    return Handoff(host="127.0.0.1", take_closed_port=free_port(), file_ready_port=free_port(),
+                   ssh_user="rafael", data_root=PurePosixPath("/data/mocap"))
 
 
 @pytest.fixture

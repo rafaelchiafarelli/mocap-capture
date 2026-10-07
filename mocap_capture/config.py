@@ -10,8 +10,9 @@ Every camera declares `preprocess:`, either a `PreprocessSpec` (crop inside
 the source frame, output size) or the word `none`; a missing one is an error,
 never a default. In the resulting `CameraConfig` an absent `preprocess`
 means none, as the contract says.
-`handoff` declares the processing PC: its `host` and the ports its
-`mocap-extract watch` binds for `TakeClosed` and `CameraFileReady`.
+`handoff` declares the processing PC: its `host`, the ports its
+`mocap-extract watch` binds for `TakeClosed` and `CameraFileReady`, and the
+`ssh_user` and `data_root` (absolute, on that PC) files are rsynced into.
 Each `cameras` entry is a `CameraConfig` from
 mocap-contracts and is checked exactly like a contract file: declared
 fields only, `required` enforced, plus the per-message rules. Every other
@@ -24,13 +25,13 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from os import PathLike
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import yaml
 from mocap_contracts import CameraConfig, ContractError, PreprocessSpec, from_json
 
 SECTIONS = ("storage", "take", "report", "handoff", "cameras")
-HANDOFF_KEYS = ("host", "take_closed_port", "file_ready_port")
+HANDOFF_KEYS = ("host", "take_closed_port", "file_ready_port", "ssh_user", "data_root")
 STORAGE_KEYS = ("root",)
 
 
@@ -43,6 +44,8 @@ class Handoff:
     host: str
     take_closed_port: int
     file_ready_port: int
+    ssh_user: str
+    data_root: PurePosixPath
 
     @property
     def take_closed_endpoint(self) -> str:
@@ -136,7 +139,13 @@ def _handoff(path: str | PathLike[str], handoff: object) -> Handoff:
         ports[key] = port
     if ports["take_closed_port"] == ports["file_ready_port"]:
         raise ConfigError(f"{path}: handoff ports must differ (one per event type)")
-    return Handoff(host=host, **ports)
+    user = handoff.get("ssh_user")
+    if not isinstance(user, str) or not user:
+        raise ConfigError(f"{path}: handoff.ssh_user must be a user name, got {user!r}")
+    root = handoff.get("data_root")
+    if not isinstance(root, str) or not PurePosixPath(root).is_absolute():
+        raise ConfigError(f"{path}: handoff.data_root must be an absolute path, got {root!r}")
+    return Handoff(host=host, ssh_user=user, data_root=PurePosixPath(root), **ports)
 
 
 def _storage(path: str | PathLike[str], storage: object) -> Path:

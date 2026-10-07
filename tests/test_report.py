@@ -167,6 +167,8 @@ def write_config(tmp_path) -> Path:
     path = tmp_path / "config.yaml"
     path.write_text(yaml.safe_dump({"storage": {"root": str(tmp_path)},
                                     "take": {"post_roll_ms": 0},
+                                    "handoff": {"host": "127.0.0.1", "take_closed_port": 5600, "file_ready_port": 5601,
+                        "ssh_user": "rafael", "data_root": "/data/mocap"},
                                     "report": {"max_gap_ms": 100}, "cameras": [STREAM_CAMERA]}))
     return path
 

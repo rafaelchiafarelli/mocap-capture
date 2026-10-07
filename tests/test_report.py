@@ -159,7 +159,8 @@ def test_summary(tmp_path):
 
 STREAM_CAMERA = {"role": "body_1", "source": "CAMERA_SOURCE_STREAM", "width": 1920,
                  "height": 1080, "fps": 30, "notes": "", "stream_host": "10.0.0.1",
-                 "video_port": 1, "sync_port": 2, "control_port": 3, "stats_port": 4}
+                 "video_port": 1, "sync_port": 2, "control_port": 3, "stats_port": 4,
+                 "preprocess": "none"}
 
 
 def write_config(tmp_path) -> Path:

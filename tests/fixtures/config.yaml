@@ -14,6 +14,7 @@ cameras:
     fps: 30
     notes: front webcam
     device_hint: usb-046d_HD_Pro_Webcam_C920-video-index0
+    preprocess: none
     controls:
       - key: exposure_time_absolute
         value: {int_value: 150}

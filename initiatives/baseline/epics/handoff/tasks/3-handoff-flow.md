@@ -8,6 +8,6 @@
     2. As each role finishes preprocessing: send `prep/<role>.mkv`, then publish its `CameraFileReady` (VIDEO). Roles go independently, so a fast camera never waits for a slow one.
     3. `report.json` follows when it's ready (it doesn't gate processing).
   - Delivers: automatic hand-off at the end of `mocap-capture take`, plus `mocap-capture send --session S --take T` to resend anything missing (idempotent)
-- **Pre-work:** **Rafael decides whether `raw/` videos are handed off too.** Proposal: no. They stay on the recorder as the archive. Timestamps always travel.
+- **Pre-work:** none. **Decided 2026-10-06: `raw/` videos are not handed off.** They stay on the recorder as the archive. Timestamps always travel.
 - **Out of scope:** live forwarding during the take (phase 2)
 - **Tests:** with fakes: the order is session.json and take.json → timestamps → `TakeClosed` → videos per role; a slow role doesn't delay the others; the resend sends only what's missing

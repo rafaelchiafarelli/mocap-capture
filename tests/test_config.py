@@ -32,6 +32,10 @@ def test_valid_config():
     assert stream.source == CameraSource.Value("CAMERA_SOURCE_STREAM")
     assert stream.stream_host == "192.168.1.21"
     assert stream.preprocess.output_width == 960
+    assert config.preprocess("body_1") is None
+    assert config.preprocess("body_2").crop.width == 1440
+    with pytest.raises(KeyError):
+        config.preprocess("body_9")
 
 
 def _drop(field):
@@ -69,6 +73,16 @@ def _set(i, field, value):
         (_drop("device_hint"), "a UVC camera needs device_hint"),
         (_set(1, "video_port", 70000), "ports must be 1..65535"),
         (_set(1, "role", "body_1"), "duplicate role(s) ['body_1']"),
+        (_drop("preprocess"), "cameras[0]: preprocess must be declared (a spec, or none)"),
+        (_set(0, "preprocess", None), "preprocess must be a spec or none, got None"),
+        (_set(0, "preprocess", "None"), "preprocess must be a spec or none, got 'None'"),
+        (_set(1, "preprocess", {"output_width": 960}), "missing required field(s) ['output_height']"),
+        (_set(1, "preprocess", {"crop": {"x": 1000, "y": 0, "width": 1440, "height": 1080},
+                                "output_width": 960, "output_height": 720}),
+         "crop 1000,0 1440x1080 is outside the 1920x1080 source frame"),
+        (_set(1, "preprocess", {"crop": {"x": -1, "y": 0, "width": 10, "height": 10},
+                                "output_width": 960, "output_height": 720}),
+         "crop needs x, y >= 0"),
     ],
 )
 def test_invalid_config(tmp_path, edit, message):

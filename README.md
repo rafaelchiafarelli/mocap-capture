@@ -60,6 +60,8 @@ arrived (STREAM frames arrive ~100 ms after capture). `cameras` is
 a list of `CameraConfig` entries from `mocap-contracts`. They're checked just like a contract file: only
 declared fields, all required fields present, and the per-message rules (UVC
 needs `device_hint`, STREAM needs a host and ports). Roles must be unique.
+Every camera declares `preprocess:`, either a crop/output-size spec (the crop
+inside the source frame) or `none`; a missing one is an error.
 Any other top-level key is an error. Later sections (`handoff`, `board`, ...)
 are added by the tasks that need them. Example:
 [`tests/fixtures/config.yaml`](tests/fixtures/config.yaml).

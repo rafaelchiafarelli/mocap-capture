@@ -6,6 +6,10 @@
 ok (shorter gaps are listed in the report, not failed). `take.post_roll_ms`
 is how long every source keeps recording after END, so the last frames
 captured before END have arrived when it stops.
+Every camera declares `preprocess:`, either a `PreprocessSpec` (crop inside
+the source frame, output size) or the word `none`; a missing one is an error,
+never a default. In the resulting `CameraConfig` an absent `preprocess`
+means none, as the contract says.
 Each `cameras` entry is a `CameraConfig` from
 mocap-contracts and is checked exactly like a contract file: declared
 fields only, `required` enforced, plus the per-message rules. Every other
@@ -21,7 +25,7 @@ from os import PathLike
 from pathlib import Path
 
 import yaml
-from mocap_contracts import CameraConfig, ContractError, from_json
+from mocap_contracts import CameraConfig, ContractError, PreprocessSpec, from_json
 
 SECTIONS = ("storage", "take", "report", "cameras")
 STORAGE_KEYS = ("root",)
@@ -37,6 +41,13 @@ class Config:
     post_roll_ms: float
     max_gap_ms: float
     cameras: tuple[CameraConfig, ...]
+
+    def preprocess(self, role: str) -> PreprocessSpec | None:
+        """The role's declared preprocessing, None for `none`."""
+        camera = next((c for c in self.cameras if c.role == role), None)
+        if camera is None:
+            raise KeyError(f"no camera with role {role!r}")
+        return camera.preprocess if camera.HasField("preprocess") else None
 
 
 def load_config(path: str | PathLike[str]) -> Config:
@@ -101,11 +112,26 @@ def _storage(path: str | PathLike[str], storage: object) -> Path:
 
 def _camera(path: str | PathLike[str], i: int, entry: object) -> CameraConfig:
     where = f"{path}: cameras[{i}]"
+    if isinstance(entry, dict):
+        if "preprocess" not in entry:
+            raise ConfigError(f"{where}: preprocess must be declared (a spec, or none)")
+        if entry["preprocess"] == "none":
+            entry = {k: v for k, v in entry.items() if k != "preprocess"}
+        elif not isinstance(entry["preprocess"], dict):
+            raise ConfigError(f"{where}: preprocess must be a spec or none, got {entry['preprocess']!r}")
     try:
         text = json.dumps(entry)
     except (TypeError, ValueError) as e:
         raise ConfigError(f"{where}: {e}") from None
     try:
-        return from_json(CameraConfig, text)
+        camera = from_json(CameraConfig, text)
     except ContractError as e:
         raise ConfigError(f"{where}: {e}") from None
+    if camera.HasField("preprocess") and camera.preprocess.HasField("crop"):
+        c = camera.preprocess.crop
+        if c.x + c.width > camera.width or c.y + c.height > camera.height:
+            raise ConfigError(
+                f"{where}: crop {c.x},{c.y} {c.width}x{c.height} is outside the "
+                f"{camera.width}x{camera.height} source frame"
+            )
+    return camera

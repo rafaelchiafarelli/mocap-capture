@@ -70,6 +70,8 @@ def _set(i, field, value):
         (lambda d: d["handoff"].update(file_ready_port=0), "handoff.file_ready_port must be a port 1..65535"),
         (lambda d: d["handoff"].update(file_ready_port=5600), "handoff ports must differ"),
         (lambda d: d["handoff"].update(user="me"), "handoff: unknown key(s) ['user']"),
+        (lambda d: d["handoff"].pop("ssh_user"), "handoff.ssh_user must be a user name"),
+        (lambda d: d["handoff"].update(data_root="mocap"), "handoff.data_root must be an absolute path"),
         (lambda d: d.update(take={"post_roll_ms": -1}), "take.post_roll_ms must be a non-negative number"),
         (lambda d: d.pop("cameras"), "cameras must be a non-empty list"),
         (lambda d: d.update(cameras=[]), "cameras must be a non-empty list"),

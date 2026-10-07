@@ -67,7 +67,8 @@ class FakeSource:
 def setup(tmp_path):
     data = {"storage": {"root": str(tmp_path / "data")}, "report": {"max_gap_ms": 100},
             "take": {"post_roll_ms": 0},
-            "handoff": {"host": "127.0.0.1", "take_closed_port": 5600, "file_ready_port": 5601},
+            "handoff": {"host": "127.0.0.1", "take_closed_port": 5600, "file_ready_port": 5601,
+                        "ssh_user": "rafael", "data_root": "/data/mocap"},
             "cameras": [stream_camera("body_1", 21), stream_camera("body_2", 22)]}
     path = tmp_path / "config.yaml"
     path.write_text(yaml.safe_dump(data))

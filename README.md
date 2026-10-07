@@ -32,14 +32,14 @@ It reads `config.yaml` (cameras, roles, controls, board, hand-off target) and
 writes the take folder (`take.json`, `report.json`, `raw/`, `prep/`), all
 defined in `mocap-contracts`.
 
-## How it's used (planned)
+## How it's used
 
 ```bash
 mocap-capture camera controls --role body_1          # list every control the camera offers
 mocap-capture camera set --role body_1 exposure_time_absolute=150
 mocap-capture take --session S --name N --type CALIBRATION|PERFORMANCE
 mocap-capture report --session S --take T          # rewrite and print report.json
-mocap-capture send --session S --take T              # resend anything missing
+mocap-capture send --session S --take T              # hand off again: sends only what's missing
 ```
 
 ## Development
@@ -71,8 +71,12 @@ are added by the tasks that need them. Example:
 
 ## Status
 
-Baseline in progress: bootstrap, devices (`CameraSource` registry, STREAM
-source) and recording (`ManualTrigger`, `mocap-capture take`) done.
+Baseline: every epic done (bootstrap, devices, recording, sync, verification,
+preprocess, handoff). `mocap-capture take` records every STREAM camera, writes
+`take.json` and `report.json`, then hands the take off: preprocessing (FFV1)
+per role, rsync per file, Harpia events. Its initiative gate (a real take with
+≥2 tablets reaching a real processing PC) is still to be run. `camera
+controls|set` are planned in `studio-setup`.
 Initiatives:
 - [`baseline`](initiatives/baseline/baseline.md): cameras, recording, sync,
   report, preprocessing, hand-off

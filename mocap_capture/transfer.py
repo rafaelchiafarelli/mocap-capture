@@ -101,6 +101,21 @@ def send_file(
     return arrived
 
 
+def send_session_file(
+    storage_root: Path, session: str, name: str, target: SshTarget | LocalTarget
+) -> Arrived:
+    """Copy a session-level file (`session.json`) to <data_root>/<session>/<name>."""
+    source = layout.session_dir(storage_root, session) / name
+    if not source.is_file():
+        raise TransferError(f"{source} is not a file")
+    rel = PurePosixPath(session, name)
+    _rsync(source, rel, target)
+    arrived, local = target.measure(rel), Arrived(source.stat().st_size, _sha256(source))
+    if arrived != local:
+        raise TransferError(f"{name} arrived as {arrived}, sent {local}")
+    return arrived
+
+
 def rsync_cmd(source: Path, rel: PurePosixPath, target: SshTarget | LocalTarget) -> list[str]:
     return ["rsync", "--times", "--mkpath", f"--partial-dir={PARTIAL_DIR}",
             *target.rsync_shell(), str(source), target.rsync_dest(rel)]

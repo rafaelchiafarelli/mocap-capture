@@ -122,3 +122,16 @@ def test_invalid_event_writes_nothing_and_sends_nothing(handoff, ctx, take_dir, 
 def test_not_an_event():
     with pytest.raises(HandoffError, match="not a hand-off event"):
         sidecar_path(None, SyncEvent())
+
+
+def test_identical_sidecar_is_left_untouched(take_dir):
+    from mocap_capture.handoff import write_sidecar
+
+    path = write_sidecar(take_dir, closed())
+    before = path.stat().st_ino, path.stat().st_mtime_ns
+    write_sidecar(take_dir, closed())
+    assert (path.stat().st_ino, path.stat().st_mtime_ns) == before
+    changed = closed()
+    changed.roles.append("body_3")
+    write_sidecar(take_dir, changed)
+    assert from_json(TakeClosed, path.read_text()).roles[-1] == "body_3"

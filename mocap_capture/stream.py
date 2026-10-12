@@ -11,8 +11,9 @@ parsing comes from its reference reader, `mocap_contracts.stream_v1`.
     collect()   writes raw/<role>.timestamps.csv: every timed frame on the
                 host clock, the offset interpolated between the two syncs
 
-The host clock is Unix time in ns (`time.time_ns`, CLOCK_REALTIME), the
-clock the spec names and the one UVC cameras are stamped with.
+The host clock is Unix time in ns, the clock the spec names, taken from
+`mocap_capture.clock.host_ns` so a step in the wall clock can't move times
+within a take.
 
 Nothing is guessed. A frame without a v1 timestamp gets no row, a jump in
 the SEI sequence is a gap, and a dropped connection is reconnected and
@@ -35,6 +36,7 @@ from typing import Protocol
 from mocap_contracts import CameraConfig, layout, stream_v1
 from mocap_contracts import CameraSource as SourceKind
 
+from mocap_capture.clock import host_ns
 from mocap_capture.sources import register
 
 log = logging.getLogger(__name__)
@@ -140,7 +142,7 @@ def sync_clock(
     probes: int = 200,
     interval_s: float = 0.01,
     timeout_s: float = 0.2,
-    clock: Clock = time.time_ns,
+    clock: Clock = host_ns,
 ) -> SyncPoint:
     """Probe the camera's sync port and return the offset, per spec §4–§5."""
     answered: list[stream_v1.Probe] = []
@@ -261,7 +263,7 @@ class StreamSource:
         timeout_s: float = 5.0,
         reconnect_delay_s: float = 0.5,
         muxer: Callable[[Path, float], Muxer] = FfmpegMuxer,
-        clock: Clock = time.time_ns,
+        clock: Clock = host_ns,
     ):
         self.config = config
         self.problems: list[str] = []

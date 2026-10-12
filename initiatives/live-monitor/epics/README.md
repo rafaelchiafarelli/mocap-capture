@@ -3,6 +3,7 @@
 1. **preview-tap** — Latest frame per camera, without touching recording (2 tasks: 1, 3)
 2. **viewer** — What the director sees (2 tasks)
 3. **latency** — Prove it's live and harmless (2 tasks)
+4. **ready-check** — Ready-set-go: the operator confirms every body camera sees the actor before START (1 task)
 
 Task numbers have gaps where UVC tasks were parked (`initiatives/future/uvc/`).
 

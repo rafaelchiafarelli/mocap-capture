@@ -19,21 +19,27 @@ identical in frame count and timestamps to a take recorded without the viewer
 open.
 
 **Blocked on:**
-- The decisions listed under "Open decisions" below.
+- The open decision on layout (2) for the viewer epic.
 - The **STREAM camera source** (`baseline` devices/5), which is now planned, and the
   production camera app (`mocap-camera-app`) it reads from.
 
-## Open decisions (Rafael, before any task starts)
+## Decisions (Rafael, 2026-10-12) and what is still open
 
-1. **Where the director watches:** a window on the recorder PC's own screen, or
-   a page served on the capture network for another device (laptop/tablet)?
-   This decides the viewer epic, and whether the recorder needs to re-encode.
-2. **Layout:** all cameras in a grid, or one large selected camera plus
-   thumbnails? (7 cameras planned.)
-3. **Latency target:** proposal p95 frame age ≤ 150 ms from capture to screen.
-   The capture→PC part alone measured 45–60 ms median on the M7.
-4. **Overlays:** proposal: role name, recording state + take name, live frame
-   age, fps/drops warning per camera.
+1. **Where the director watches: decided.** On the **recorder PC's own screen**.
+   No network viewer, no re-encoding.
+2. **Layout: open, and it must be switchable.** Rafael expects a many-camera
+   setup whose layout may change. Candidate layouts (selected camera +
+   thumbnails, equal grid, spatial/top-down map, …) are being compared before
+   the viewer epic starts. Whatever is chosen, the layout is a config/runtime
+   choice, not hard-wired.
+3. **Latency target: proposal stands** (p95 frame age ≤ 150 ms), not yet
+   confirmed.
+4. **Overlays: none for now.** Start with plain images and add overlays only
+   when a need appears.
+5. **Ready-set-go before every take: decided.** Before START, the operator
+   confirms on the monitor that the actor is in frame on each body camera.
+   Detection-rate metrics count from GO, because the actor may not be on screen
+   when recording starts. See epic `ready-check`.
 
 General context, cross-repository order and open questions:
 `mocap-studio/HANDOFF.md`.

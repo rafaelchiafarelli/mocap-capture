@@ -13,24 +13,29 @@ means none, as the contract says.
 `handoff` declares the processing PC: its `host`, the ports its
 `mocap-extract watch` binds for `TakeClosed` and `CameraFileReady`, and the
 `ssh_user` and `data_root` (absolute, on that PC) files are rsynced into.
+`board` is the declared ChArUco board, a `CalibrationBoard`, copied into every
+CALIBRATION take. It's optional (a recorder that only records performances
+doesn't need one), but a partial board is an error and nothing defaults.
 Each `cameras` entry is a `CameraConfig` from
 mocap-contracts and is checked exactly like a contract file: declared
 fields only, `required` enforced, plus the per-message rules. Every other
-section (`handoff`, `board`, ...) is added by the task that needs it, so
+section is added by the task that needs it, so
 an unknown top-level key is an error rather than something to ignore.
 """
 
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from os import PathLike
 from pathlib import Path, PurePosixPath
 
 import yaml
-from mocap_contracts import CameraConfig, ContractError, PreprocessSpec, from_json
+from mocap_contracts import CalibrationBoard, CameraConfig, ContractError, PreprocessSpec, from_json
 
-SECTIONS = ("storage", "take", "report", "handoff", "cameras")
+SECTIONS = ("storage", "take", "report", "handoff", "board", "cameras")
+ARUCO_DICTIONARY = re.compile(r"DICT_(4X4|5X5|6X6|7X7)_(50|100|250|1000)|DICT_ARUCO_ORIGINAL")
 HANDOFF_KEYS = ("host", "take_closed_port", "file_ready_port", "ssh_user", "data_root")
 STORAGE_KEYS = ("root",)
 
@@ -63,6 +68,7 @@ class Config:
     max_gap_ms: float
     handoff: Handoff
     cameras: tuple[CameraConfig, ...]
+    board: CalibrationBoard | None = None
 
     def preprocess(self, role: str) -> PreprocessSpec | None:
         """The role's declared preprocessing, None for `none`."""
@@ -90,6 +96,7 @@ def load_config(path: str | PathLike[str]) -> Config:
     post_roll_ms = _number(path, data.get("take"), "take", "post_roll_ms", allow_zero=True)
     max_gap_ms = _number(path, data.get("report"), "report", "max_gap_ms")
     handoff = _handoff(path, data.get("handoff"))
+    board = _board(path, data["board"]) if "board" in data else None
     entries = data.get("cameras")
     if not isinstance(entries, list) or not entries:
         raise ConfigError(f"{path}: cameras must be a non-empty list")
@@ -101,7 +108,7 @@ def load_config(path: str | PathLike[str]) -> Config:
         raise ConfigError(f"{path}: duplicate role(s) {duplicates}")
     return Config(
         storage_root=storage_root, post_roll_ms=post_roll_ms, max_gap_ms=max_gap_ms,
-        handoff=handoff, cameras=cameras,
+        handoff=handoff, cameras=cameras, board=board,
     )
 
 
@@ -146,6 +153,20 @@ def _handoff(path: str | PathLike[str], handoff: object) -> Handoff:
     if not isinstance(root, str) or not PurePosixPath(root).is_absolute():
         raise ConfigError(f"{path}: handoff.data_root must be an absolute path, got {root!r}")
     return Handoff(host=host, ssh_user=user, data_root=PurePosixPath(root), **ports)
+
+
+def _board(path: str | PathLike[str], board: object) -> CalibrationBoard:
+    if not isinstance(board, dict):
+        raise ConfigError(f"{path}: board must be a mapping (a CalibrationBoard)")
+    try:
+        msg = from_json(CalibrationBoard, json.dumps(board))
+    except (ContractError, TypeError, ValueError) as e:
+        raise ConfigError(f"{path}: board: {e}") from None
+    # Sizes and counts are checked by the contract's rules; the dictionary name is the recorder's own check.
+    if not ARUCO_DICTIONARY.fullmatch(msg.aruco_dictionary):
+        raise ConfigError(f"{path}: board.aruco_dictionary must be an OpenCV ArUco name like DICT_4X4_250, "
+                          f"got {msg.aruco_dictionary!r}")
+    return msg
 
 
 def _storage(path: str | PathLike[str], storage: object) -> Path:

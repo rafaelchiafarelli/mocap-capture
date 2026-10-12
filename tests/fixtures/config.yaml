@@ -12,6 +12,13 @@ handoff:
   file_ready_port: 5601
   ssh_user: rafael
   data_root: /data/mocap
+board:
+  squares_x: 5
+  squares_y: 3
+  square_length_mm: 55
+  marker_length_mm: 44
+  aruco_dictionary: DICT_4X4_250
+  measured_square_length_mm: 54.8
 cameras:
   - role: body_1
     source: CAMERA_SOURCE_UVC

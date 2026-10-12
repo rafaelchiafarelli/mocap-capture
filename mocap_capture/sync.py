@@ -1,6 +1,6 @@
 """START/END sync markers on the host clock.
 
-The host clock is Unix time in ns (`time.time_ns`, CLOCK_REALTIME), the
+The host clock is Unix time in ns that never steps (`mocap_capture.clock`), the
 clock every source's per-frame timestamps are on (stream protocol v1 maps
 each frame onto it), so a marker can be placed inside every camera's range.
 
@@ -10,10 +10,11 @@ them (an NTP correction mid-take) is an error, never clamped.
 
 from __future__ import annotations
 
-import time
 from collections.abc import Callable
 
 from mocap_contracts import SyncEvent, SyncKind, SyncSource
+
+from mocap_capture.clock import host_ns
 
 START = SyncKind.Value("SYNC_KIND_START")
 END = SyncKind.Value("SYNC_KIND_END")
@@ -27,7 +28,7 @@ class SyncError(RuntimeError):
 class ManualTrigger:
     """Markers set by the operator (or by the take lifecycle on their behalf)."""
 
-    def __init__(self, clock: Callable[[], int] = time.time_ns):
+    def __init__(self, clock: Callable[[], int] = host_ns):
         self._clock = clock
         self.start: SyncEvent | None = None
         self.end: SyncEvent | None = None

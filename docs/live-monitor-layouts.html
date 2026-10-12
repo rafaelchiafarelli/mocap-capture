@@ -1,0 +1,234 @@
+<title>Director Monitor Layouts</title>
+<!-- Mockup for live-monitor decision 2 (all four layouts, selectable). Published copy: https://claude.ai/artifact/7YXF2fJkEfuwTPwxGbdR98 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&family=Archivo+Narrow:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column of option cards; each card = a 16:9 "recorder screen" mock + its trade-offs. */
+:root {
+  --bg: #eef0ef;
+  --surface: #f8f9f8;
+  --ink: #1d2422;
+  --muted: #5d6865;
+  --line: #cfd5d2;
+  --screen: #141a19;
+  --tile: #2a3331;
+  --feed: #3a4643;
+  --figure: #8fa39d;
+  --accent: #d1832b;
+  --accent-ink: #1d2422;
+  --tbd: #7d8a86;
+  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-label: "Archivo Narrow", "Arial Narrow", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111615; --surface: #19201e; --ink: #e3e9e6; --muted: #9aa7a2; --line: #2e3836;
+    --screen: #050707; --tile: #1c2422; --feed: #2b3532; --figure: #7e948d;
+    --accent: #e39a46; --accent-ink: #111615; --tbd: #6c7a75; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111615; --surface: #19201e; --ink: #e3e9e6; --muted: #9aa7a2; --line: #2e3836;
+  --screen: #050707; --tile: #1c2422; --feed: #2b3532; --figure: #7e948d;
+  --accent: #e39a46; --accent-ink: #111615; --tbd: #6c7a75; color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--font-display); line-height: 1.5; }
+.wrap { max-width: 1040px; margin: 0 auto; padding-inline: 16px; padding-block: 32px 56px; display: grid; gap: 28px; }
+header { display: grid; gap: 10px; max-width: 68ch; }
+.eyebrow { font-family: var(--font-label); text-transform: uppercase; letter-spacing: .08em; font-size: 12px; color: var(--muted); }
+h1 { font-size: clamp(26px, 4vw, 36px); line-height: 1.15; margin: 0; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; padding: 12px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+.controls fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.controls legend { float: left; margin-right: 8px; font-family: var(--font-label); font-size: 13px; color: var(--muted); }
+.seg { font: 600 13px var(--font-label); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+.seg[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.seg:focus-visible, .tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hint { font-size: 13px; color: var(--muted); }
+.options { display: grid; gap: 24px; }
+.option { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 20px; padding: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.option.recommended { border-color: var(--accent); }
+@media (max-width: 760px) { .option { grid-template-columns: minmax(0, 1fr); } }
+.screen { position: relative; width: 100%; aspect-ratio: 16 / 9; background: var(--screen); border-radius: 4px; overflow: hidden; }
+.tile { position: absolute; display: flex; align-items: center; justify-content: center; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.feed { position: relative; background: var(--feed); border-radius: 2px; overflow: hidden; }
+.feed.focus { box-shadow: 0 0 0 2px var(--accent); }
+.feed.tbd { background: repeating-linear-gradient(135deg, var(--tile) 0 6px, var(--feed) 6px 12px); }
+.feed svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.tag { position: absolute; left: 4px; top: 3px; font: 500 clamp(7px, 1.1vw, 11px) var(--font-mono); color: var(--figure); white-space: nowrap; }
+.plan { position: absolute; }
+.plan svg { width: 100%; height: 100%; }
+.meta { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.meta h2 { margin: 0; font-size: 19px; line-height: 1.25; display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+.letter { font-family: var(--font-mono); font-size: 14px; color: var(--muted); }
+.badge { font: 600 11px var(--font-label); text-transform: uppercase; letter-spacing: .08em; background: var(--accent); color: var(--accent-ink); padding: 2px 8px; border-radius: 3px; }
+.meta p { margin: 0; font-size: 14px; }
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.stats div { border-top: 1px solid var(--line); padding-top: 6px; }
+.stats dt { font-family: var(--font-label); font-size: 12px; color: var(--muted); }
+.stats dd { margin: 0; font: 500 18px var(--font-mono); font-variant-numeric: tabular-nums; }
+.meta ul { margin: 0; padding-left: 18px; font-size: 14px; display: grid; gap: 4px; }
+.pro::marker { content: "+  "; color: var(--muted); }
+.con::marker { content: "–  "; color: var(--muted); }
+.notes { display: grid; gap: 8px; max-width: 68ch; font-size: 14px; color: var(--muted); }
+.notes h2 { font-size: 15px; color: var(--ink); margin: 0; }
+code { font-family: var(--font-mono); font-size: .9em; }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+@media (prefers-reduced-motion: no-preference) { .feed { transition: box-shadow .15s ease; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">mocap-capture · live-monitor · open decision 2</span>
+    <h1>Director monitor layouts</h1>
+    <p>The live cameras on the recorder PC's screen. All four layouts are available and the operator switches between them at any time; the default comes from <code>config.yaml</code>. Feeds are the tablets' portrait 1200 × 1600 images on a 16:9 display. Body cameras sit one per side of the capture cube; the face camera is likely, the hand cameras are TBD. Click any feed to make it the selected camera.</p>
+  </header>
+
+  <div class="controls">
+    <fieldset>
+      <legend>Layout</legend>
+      <button class="seg" type="button" id="lay-A" aria-pressed="false">A · Grid</button>
+      <button class="seg" type="button" id="lay-B" aria-pressed="false">B · Selected + strip</button>
+      <button class="seg" type="button" id="lay-C" aria-pressed="false">C · Room map</button>
+      <button class="seg" type="button" id="lay-D" aria-pressed="true">D · Selected + room map</button>
+    </fieldset>
+    <fieldset>
+      <legend>Cameras</legend>
+      <button class="seg" type="button" id="set-5" aria-pressed="true">4 body + face</button>
+      <button class="seg" type="button" id="set-7" aria-pressed="false">+ 2 hands (TBD)</button>
+    </fieldset>
+    <span class="hint" id="focus-hint">Selected: Body N</span>
+  </div>
+
+  <div class="options" id="options"></div>
+
+  <section class="notes">
+    <h2>Whatever is chosen</h2>
+    <ul>
+      <li>Keys 1–4 switch layout here, as they will in <code>mocap-capture monitor</code>. Room-map positions come from each camera's declared side in the config.</li>
+      <li>No overlays for now; the small role name is the only label, so the operator knows which camera is which.</li>
+      <li>The same view serves the ready-set-go check: before START the operator confirms the actor is in frame on every body camera.</li>
+      <li>The far-side camera looks back toward the near one, so its image is mirrored relative to it. Room-analog layouts make that obvious instead of confusing.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+const W = 160, H = 90, FEED = 3 / 4;           // screen units (16:9); tablet feed aspect w/h
+const ROLES = [
+  { id: "body_n", label: "Body N" }, { id: "body_e", label: "Body E" },
+  { id: "body_s", label: "Body S" }, { id: "body_w", label: "Body W" },
+  { id: "face", label: "Face" },
+  { id: "hand_l", label: "Hand L", tbd: true }, { id: "hand_r", label: "Hand R", tbd: true },
+];
+let count = 5, focus = "body_n", layoutKey = "D";
+
+function bestGrid(n, rw, rh) {
+  let best = null;
+  for (let cols = 1; cols <= n; cols++) {
+    const rows = Math.ceil(n / cols), cw = rw / cols, ch = rh / rows;
+    const fw = Math.min(cw, ch * FEED);
+    if (!best || fw > best.fw) best = { cols, rows, cw, ch, fw };
+  }
+  return best;
+}
+function gridIn(ids, x0, y0, rw, rh) {
+  const g = bestGrid(ids.length, rw, rh);
+  const offX = (rw - g.cols * g.cw) / 2;
+  return ids.map((id, i) => ({ id, x: x0 + offX + (i % g.cols) * g.cw, y: y0 + Math.floor(i / g.cols) * g.ch, w: g.cw, h: g.ch }));
+}
+const CROSS = { body_n: [1, 0], body_w: [0, 1], body_e: [2, 1], body_s: [1, 2], face: [0, 0], hand_l: [0, 2], hand_r: [2, 2] };
+function crossIn(ids, x0, y0, rw, rh, withPlan) {
+  const cw = rw / 3, ch = rh / 3;
+  const tiles = ids.map(id => ({ id, x: x0 + CROSS[id][0] * cw, y: y0 + CROSS[id][1] * ch, w: cw, h: ch }));
+  return { tiles, plan: withPlan ? { x: x0 + cw, y: y0 + ch, w: cw, h: ch } : null };
+}
+
+const OPTIONS = [
+  { key: "A", name: "Equal grid", rec: false,
+    layout: ids => ({ tiles: gridIn(ids, 0, 0, W, H) }),
+    pros: ["Simplest; every camera gets the same space", "Scales to any count without a redesign"],
+    cons: ["No camera is big enough to direct a performance from", "Position on screen says nothing about position in the room"] },
+  { key: "B", name: "Selected camera + thumbnail strip", rec: false,
+    layout: ids => ({ tiles: [{ id: focus, x: 0, y: 0, w: W * 0.62, h: H }, ...gridIn(ids, W * 0.62, 0, W * 0.38, H)] }),
+    pros: ["One large view to direct from", "Thumbnails keep every camera visible"],
+    cons: ["Thumbnails are ordered, not placed: you read labels to know where a camera is"] },
+  { key: "C", name: "Room map (analog to the studio)", rec: false,
+    layout: ids => crossIn(ids, (W - 120) / 2, 0, 120, H, true),
+    pros: ["Each feed sits on the side of the room its camera stands on", "Best for ready-set-go: “not in frame on E” points at the room"],
+    cons: ["Least picture on screen; every feed is small", "No large view to direct from"] },
+  { key: "D", name: "Selected camera + room-map thumbnails", rec: true,
+    layout: ids => {
+      const map = crossIn(ids, W * 0.62, (H - 72) / 2, W * 0.38, 72, true);
+      return { tiles: [{ id: focus, x: 0, y: 0, w: W * 0.62, h: H }, ...map.tiles], plan: map.plan };
+    },
+    pros: ["Large view to direct from, plus a small map placed like the room", "Click a map feed to swap it into the large view"],
+    cons: ["Map feeds are the smallest of all options", "Two ways of reading the screen at once"] },
+];
+
+const SIL = '<svg viewBox="0 0 30 40" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><g fill="var(--figure)"><circle cx="15" cy="9" r="3.4"/><path d="M11 14h8l1.6 10h-2.4l-.6 13h-2.6l-.5-9h-1l-.5 9h-2.6l-.6-13H9.4z"/></g></svg>';
+const PLAN = '<svg viewBox="0 0 40 40" aria-hidden="true"><rect x="9" y="9" width="22" height="22" fill="none" stroke="var(--figure)" stroke-width=".8" stroke-dasharray="2 1.5"/><circle cx="20" cy="20" r="2.2" fill="var(--accent)"/><g fill="var(--figure)"><path d="M20 4l-2.4 3.4h4.8z"/><path d="M20 36l-2.4-3.4h4.8z"/><path d="M4 20l3.4-2.4v4.8z"/><path d="M36 20l-3.4-2.4v4.8z"/></g><text x="20" y="27.5" text-anchor="middle" font-size="3.2" fill="var(--figure)" font-family="IBM Plex Mono, monospace">≈3×3 m</text></svg>';
+
+function render() {
+  const ids = ROLES.slice(0, count).map(r => r.id);
+  if (!ids.includes(focus)) focus = ids[0];
+  const host = document.getElementById("options");
+  host.innerHTML = "";
+  for (const opt of OPTIONS.filter(o => o.key === layoutKey)) {
+    const { tiles, plan } = opt.layout(ids);
+    let used = 0, maxH = 0;
+    const screen = document.createElement("div");
+    screen.className = "screen";
+    for (const t of tiles) {
+      const role = ROLES.find(r => r.id === t.id);
+      const fw = Math.min(t.w, t.h * FEED), fh = fw / FEED;
+      used += fw * fh; maxH = Math.max(maxH, fh);
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "tile";
+      b.style.cssText = `left:${t.x / W * 100}%;top:${t.y / H * 100}%;width:${t.w / W * 100}%;height:${t.h / H * 100}%`;
+      b.setAttribute("aria-label", `Select ${role.label}`);
+      const f = document.createElement("div");
+      f.className = "feed" + (t.id === focus ? " focus" : "") + (role.tbd ? " tbd" : "");
+      f.style.width = (fw / t.w * 100) + "%"; f.style.height = (fh / t.h * 100) + "%";
+      f.innerHTML = (role.tbd ? "" : SIL) + `<span class="tag">${role.label}${role.tbd ? " · TBD" : ""}</span>`;
+      b.appendChild(f);
+      b.addEventListener("click", () => { focus = t.id; render(); });
+      screen.appendChild(b);
+    }
+    if (plan) {
+      const p = document.createElement("div");
+      p.className = "plan";
+      const s = Math.min(plan.w, plan.h);
+      p.style.cssText = `left:${(plan.x + (plan.w - s) / 2) / W * 100}%;top:${(plan.y + (plan.h - s) / 2) / H * 100}%;width:${s / W * 100}%;height:${s / H * 100}%`;
+      p.innerHTML = PLAN;
+      screen.appendChild(p);
+    }
+    const card = document.createElement("article");
+    card.className = "option" + (opt.rec ? " recommended" : "");
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.innerHTML = `
+      <h2><span class="letter">${opt.key}</span>${opt.name}${opt.rec ? '<span class="badge">default</span>' : ""}</h2>
+      <dl class="stats">
+        <div><dt>Screen showing picture</dt><dd>${Math.round(used / (W * H) * 100)}%</dd></div>
+        <div><dt>Largest feed on a 1080p screen</dt><dd>${Math.round(maxH / H * 1080)} px tall</dd></div>
+      </dl>
+      <ul>${opt.pros.map(x => `<li class="pro">${x}</li>`).join("")}${opt.cons.map(x => `<li class="con">${x}</li>`).join("")}</ul>`;
+    card.append(screen, meta);
+    host.appendChild(card);
+  }
+  document.getElementById("focus-hint").textContent = "Selected: " + ROLES.find(r => r.id === focus).label;
+  for (const o of OPTIONS) document.getElementById("lay-" + o.key).setAttribute("aria-pressed", o.key === layoutKey);
+  document.getElementById("set-5").setAttribute("aria-pressed", count === 5);
+  document.getElementById("set-7").setAttribute("aria-pressed", count === 7);
+}
+document.getElementById("set-5").addEventListener("click", () => { count = 5; render(); });
+document.getElementById("set-7").addEventListener("click", () => { count = 7; render(); });
+for (const o of OPTIONS) document.getElementById("lay-" + o.key).addEventListener("click", () => { layoutKey = o.key; render(); });
+document.addEventListener("keydown", e => {
+  const k = { "1": "A", "2": "B", "3": "C", "4": "D" }[e.key];
+  if (k && !e.altKey && !e.ctrlKey && !e.metaKey) { layoutKey = k; render(); }
+});
+render();
+</script>

@@ -19,7 +19,6 @@ identical in frame count and timestamps to a take recorded without the viewer
 open.
 
 **Blocked on:**
-- The open decision on layout (2) for the viewer epic.
 - The **STREAM camera source** (`baseline` devices/5), which is now planned, and the
   production camera app (`mocap-camera-app`) it reads from.
 
@@ -27,11 +26,16 @@ open.
 
 1. **Where the director watches: decided.** On the **recorder PC's own screen**.
    No network viewer, no re-encoding.
-2. **Layout: open, and it must be switchable.** Rafael expects a many-camera
-   setup whose layout may change. Candidate layouts (selected camera +
-   thumbnails, equal grid, spatial/top-down map, …) are being compared before
-   the viewer epic starts. Whatever is chosen, the layout is a config/runtime
-   choice, not hard-wired.
+2. **Layout: decided, all four, selectable.** The viewer offers every layout
+   and the operator picks one at runtime (default in `config.yaml`):
+   - **A, equal grid:** every camera the same size;
+   - **B, selected camera + thumbnail strip;**
+   - **C, room map:** each feed on the side of the room its camera stands on,
+     around a plan of the volume;
+   - **D, selected camera + room-map thumbnails.**
+
+   Mockups: https://claude.ai/artifact/7YXF2fJkEfuwTPwxGbdR98. Room positions
+   come from each role's declared side in `config.yaml`, never from code.
 3. **Latency target: proposal stands** (p95 frame age ≤ 150 ms), not yet
    confirmed.
 4. **Overlays: none for now.** Start with plain images and add overlays only

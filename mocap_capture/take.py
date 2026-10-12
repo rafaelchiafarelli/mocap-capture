@@ -53,10 +53,8 @@ def run_take(
         take_dir = layout.take_dir(config.storage_root, session, name)
     except ContractError as e:
         raise TakeError(str(e)) from None
-    if take_type == CALIBRATION:
-        raise TakeError(
-            "a CALIBRATION take needs the declared board (studio-setup board/1), not available yet"
-        )
+    if take_type == CALIBRATION and config.board is None:
+        raise TakeError("a CALIBRATION take needs the board declared in config.yaml (board:)")
     if take_dir.exists():
         raise TakeError(f"{take_dir} already exists; a take is never overwritten")
 
@@ -84,6 +82,8 @@ def run_take(
 
     take = Take(id=name, session_id=session, type=take_type, start=trigger.mark(START))
     take.cameras.extend(TakeCamera(config=s.config) for s in sources)
+    if take_type == CALIBRATION:
+        take.board.CopyFrom(config.board)
     _write(take_dir, take)
     report(f"START {take.start.host_ts_ns}: recording {len(sources)} camera(s)")
 

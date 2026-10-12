@@ -26,7 +26,7 @@ performance take.
 2. **Board:** squares (X×Y), square and marker size, ArUco dictionary, and the
    physical size/material (a board big enough for 4 body cameras at a distance
    is usually much bigger than A4; rigid backing so it stays flat).
-   FreeMoCap's default board is the starting proposal. Declared in board/1.
+   FreeMoCap's default board is the starting proposal. Declared in baseline board/1 (moved there 2026-10-12 for the MVP).
 3. **Face and hand cameras:** where are they mounted? If they're fixed in the
    room, they join the room calibration. If they move with the actor (helmet,
    wrist), they **can't** be calibrated with the room rig and need their own

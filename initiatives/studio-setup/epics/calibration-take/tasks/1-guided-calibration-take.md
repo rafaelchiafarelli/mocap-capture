@@ -1,6 +1,6 @@
 ## 1. Guided calibration take
 
-- **Depends on:** board/1; live-monitor preview-tap/1; baseline recording/3 (take lifecycle)
+- **Depends on:** baseline board/1; live-monitor preview-tap/1; baseline recording/3 (take lifecycle)
 - **Contract:**
   - In: a CALIBRATION take while it records; the declared board
   - Requires: ChArUco detection on the **preview** frames (never on the recording path); per camera: frames with the board seen, a coverage map of where in the image it was seen, and for each camera pair the frames where both see it; the operator sees it live and stops when every camera reaches the target

@@ -5,6 +5,6 @@
   - In: `config.yaml`
   - Requires: a `board:` section filled into `CalibrationBoard` (squares_x, squares_y, square_length_mm, marker_length_mm, aruco_dictionary, measured_square_length_mm); validation rejects a missing or partial board; **no code anywhere has default board values**
   - Delivers: `load_config()` returns the board; the board is copied into `take.json` of every CALIBRATION take
-- **Pre-work:** **Rafael decides** the board (studio-setup.md, Open decision 2)
+- **Pre-work:** done: board decided 2026-10-12 (studio-setup.md, decision 2: FreeMoCap 5x3, DICT_4X4_250, 200/160 mm)
 - **Out of scope:** printing (task 2)
 - **Tests:** valid board; each missing field rejected

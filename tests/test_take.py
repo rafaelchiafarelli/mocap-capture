@@ -201,10 +201,34 @@ def test_unregistered_source_kind_is_an_error(tmp_path):
 
 
 def test_calibration_needs_the_board(setup):
-    with pytest.raises(TakeError, match="CALIBRATION take needs the declared board"):
+    with pytest.raises(TakeError, match="CALIBRATION take needs the board declared"):
         run_take(setup.config, "S1", "T1", CALIBRATION, wait_for_end=lambda: None,
                  make_source=setup.make_source)
     assert setup.log == []
+
+
+BOARD = {"squares_x": 5, "squares_y": 3, "square_length_mm": 55, "marker_length_mm": 44,
+         "aruco_dictionary": "DICT_4X4_250", "measured_square_length_mm": 54.8}
+
+
+def test_calibration_take_records_the_board(setup):
+    data = yaml.safe_load(setup.config_path.read_text())
+    data["board"] = BOARD
+    setup.config_path.write_text(yaml.safe_dump(data))
+    config = load_config(setup.config_path)
+
+    take_dir = run_take(config, "S1", "T1", CALIBRATION, wait_for_end=lambda: None,
+                        trigger=ManualTrigger(setup.clock), make_source=setup.make_source, report=lambda _: None)
+
+    take = read_take(take_dir)
+    assert take.type == CALIBRATION
+    assert take.board.measured_square_length_mm == pytest.approx(54.8)
+    assert (take.board.squares_x, take.board.squares_y) == (5, 3)
+
+
+def test_performance_take_has_no_board(setup):
+    take = read_take(setup.run())
+    assert not take.HasField("board")
 
 
 @pytest.mark.parametrize("session, name", [("bad/id", "T1"), ("S1", "../escape")])

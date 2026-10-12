@@ -26,10 +26,12 @@ def test_events_are_valid_contract_messages():
 
 
 def test_real_clock_is_unix_ns_and_monotonic():
-    before = time.time_ns()
+    from mocap_capture.clock import host_ns
+    before = host_ns()
     trigger = ManualTrigger()
     start, end = trigger.mark(START), trigger.mark(END)
-    assert before <= start.host_ts_ns <= end.host_ts_ns <= time.time_ns()
+    assert before <= start.host_ts_ns <= end.host_ts_ns <= host_ns()
+    assert abs(start.host_ts_ns - time.time_ns()) < 3600 * 10**9  # still Unix ns
 
 
 def test_simulated_key_press():
@@ -65,3 +67,16 @@ def test_out_of_order(marks, message):
         trigger.mark(kind)
     with pytest.raises(SyncError, match=message):
         trigger.mark(bad)
+
+
+def test_host_clock_ignores_a_stepped_wall_clock(monkeypatch):
+    import inspect
+
+    from mocap_capture import clock, stream
+    before = clock.host_ns()
+    monkeypatch.setattr(time, "time_ns", lambda: 0)  # the wall clock jumps back to 1970
+    after = clock.host_ns()
+    assert 0 <= after - before < 1_000_000_000
+    assert inspect.signature(ManualTrigger).parameters["clock"].default is clock.host_ns
+    assert inspect.signature(stream.sync_clock).parameters["clock"].default is clock.host_ns
+    assert inspect.signature(stream.StreamSource).parameters["clock"].default is clock.host_ns

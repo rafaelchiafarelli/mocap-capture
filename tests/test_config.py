@@ -38,6 +38,25 @@ def test_valid_config():
     assert config.preprocess("body_2").crop.width == 1440
     with pytest.raises(KeyError):
         config.preprocess("body_9")
+    assert (config.board.squares_x, config.board.squares_y) == (5, 3)
+    assert config.board.measured_square_length_mm == pytest.approx(54.8)
+    assert config.board.aruco_dictionary == "DICT_4X4_250"
+
+
+def test_board_is_optional(tmp_path):
+    data = _fixture()
+    del data["board"]
+    assert load_config(_write(tmp_path, data)).board is None
+
+
+def _board(**change):
+    def edit(data):
+        for key, value in change.items():
+            if value is None:
+                del data["board"][key]
+            else:
+                data["board"][key] = value
+    return edit
 
 
 def _drop(field):
@@ -55,7 +74,16 @@ def _set(i, field, value):
 @pytest.mark.parametrize(
     "edit, message",
     [
-        (lambda d: d.update(board={}), "unknown section(s) ['board']"),
+        (lambda d: d.update(lens={}), "unknown section(s) ['lens']"),
+        (lambda d: d.update(board=[]), "board must be a mapping"),
+        (_board(measured_square_length_mm=None), "missing required field(s) ['measured_square_length_mm']"),
+        (_board(squares_x=None), "missing required field(s) ['squares_x']"),
+        (_board(aruco_dictionary=None), "missing required field(s) ['aruco_dictionary']"),
+        (_board(colour="white"), "unknown field(s) ['colour']"),
+        (_board(squares_y=1), "a ChArUco board needs at least 2x2 squares"),
+        (_board(measured_square_length_mm=0), "lengths must be positive: ['measured_square_length_mm']"),
+        (_board(marker_length_mm=55), "marker_length_mm must be smaller than square_length_mm"),
+        (_board(aruco_dictionary="4x4"), "board.aruco_dictionary must be an OpenCV ArUco name"),
         (lambda d: d.pop("storage"), "storage must be a mapping with root"),
         (lambda d: d.update(storage={"root": "data"}), "storage.root must be an absolute path"),
         (lambda d: d.update(storage={}), "storage.root must be an absolute path"),

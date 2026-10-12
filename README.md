@@ -51,7 +51,7 @@ make test   # full suite
 
 ## config.yaml
 
-Five sections so far. `storage.root` is the data root the session folders
+Six sections so far. `storage.root` is the data root the session folders
 live under (`<root>/<session>/takes/<take>/`), an absolute path.
 `report.max_gap_ms` is the longest frame gap a take may have and still be ok
 (shorter gaps are listed, not failed). `take.post_roll_ms` is how long every
@@ -59,7 +59,11 @@ source keeps recording after END, so the frames captured before END have
 arrived (STREAM frames arrive ~100 ms after capture). `handoff` declares the
 processing PC: its `host` and the two ports its `mocap-extract watch` binds
 (`take_closed_port`, `file_ready_port`), and the `ssh_user` and absolute
-`data_root` that files are rsynced into there (rsync 3.2.3+ on both sides). `cameras` is
+`data_root` that files are rsynced into there (rsync 3.2.3+ on both sides). `board` is
+the declared ChArUco board (a `CalibrationBoard`: squares, square and marker
+length, ArUco dictionary, and the square length measured on the print). It's
+copied into `take.json` of every CALIBRATION take, which is refused without it.
+`cameras` is
 a list of `CameraConfig` entries from `mocap-contracts`. They're checked just like a contract file: only
 declared fields, all required fields present, and the per-message rules (UVC
 needs `device_hint`, STREAM needs a host and ports). Roles must be unique.

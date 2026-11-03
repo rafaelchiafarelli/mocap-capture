@@ -26,3 +26,4 @@ Rules specific to this repository:
 | [studio-setup](studio-setup/studio-setup.md) | Planned — P1 setup; parts blocked on decisions |
 | [live-monitor](live-monitor/live-monitor.md) | Planned — blocked on decisions |
 | [future](future/README.md) | Parked ideas (LED flash sync, UVC webcams) — not planned |
+| [bugs](bugs/bugs.md) | Open — a backlog, fixed when a bug gets in the way |
